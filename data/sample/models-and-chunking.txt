@@ -1,0 +1,22 @@
+Models and chunking
+===================
+
+This file is part of the Adaptive RAG TypeScript knowledge base.
+
+The default chat model is gpt-4o-mini. The default embedding model is
+text-embedding-3-small. Both can be overridden with OPENAI_CHAT_MODEL
+and OPENAI_EMBEDDING_MODEL. Azure OpenAI is optional. It is used only
+when AZURE_OPENAI_API_KEY, an instance name, and a chat deployment are
+set. The swap lives in src/lib/llm.ts.
+
+Chunking
+--------
+Text is split with RecursiveCharacterTextSplitter. Chunk size is about
+1000 characters. Chunk overlap is 150 characters. Only .txt uploads are
+accepted. PDF and Office files are rejected by the upload API.
+
+Hop metrics
+-----------
+Each graph node records elapsed milliseconds. Generate records token
+counts when the API returns usage_metadata. The UI shows those numbers
+under the path chips.

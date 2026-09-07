@@ -1,0 +1,25 @@
+Eval and grade policy
+=====================
+
+This file is part of the Adaptive RAG TypeScript knowledge base.
+
+The grade node is read-only. It cannot call web search. It only decides
+whether retrieved chunks can help answer any document part of the
+question. A named-file hit is treated as relevant even if the question
+also asks for weather or news.
+
+Rewrite budget
+--------------
+The rewrite budget is exactly one. Trace must never contain two rewrite
+hops. After that failed grade, the path is webSearch then generate.
+
+Eval
+----
+npm run eval compares expectedRoute to the actual route. Index answers
+are also scored for groundedness: each claim is checked against the
+retrieved chunks. Index cases may list mustContain phrases that have to
+appear in the answer. Eval does not score writing style.
+
+A grounded answer should cite retrieved text. If a sentence is not
+supported by a chunk or a web snippet, the generator should say it does
+not know rather than invent a source.

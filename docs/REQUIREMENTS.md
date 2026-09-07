@@ -34,7 +34,7 @@ A single chat model either invents sources or always retrieves documents, even w
 | FR-6 | `search` calls Tavily and then generate. |
 | FR-7 | `general` answers with the chat model only. |
 | FR-8 | Accept `.txt` uploads; split at about 1000 characters with 150 overlap; persist in Qdrant. Same filename overwrites the previous copy; identical content is not indexed again. |
-| FR-9 | If the Qdrant collection is empty, seed from `data/sample/azure-ai.txt`. |
+| FR-9 | Seed every `.txt` in `data/sample/` if that filename is not already in Qdrant. |
 | FR-10 | Query API returns `{ answer, route, trace, sources, metrics }`. |
 | FR-11 | UI shows the three pipelines, upload, chat, path chips, sources, and hop timing. |
 | FR-12 | Chat turns and session metadata are stored in MongoDB by `sessionId`. |

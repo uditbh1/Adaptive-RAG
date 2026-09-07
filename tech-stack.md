@@ -70,7 +70,7 @@ Not in v1: PDF parsers, Azure AI Search, login.
 | Piece | Package / command | Role |
 | --- | --- | --- |
 | Eval runner | `tsx eval/run.ts` / `npm run eval` | Route check + index groundedness |
-| Cases | `eval/cases.json` | 5 index, 3 search, 2 general |
+| Cases | `eval/cases.json` | 38 index, 12 search, 10 general |
 | Env load | `dotenv` | `.env.local` then `.env` |
 | Types | `typescript` `^5.8` | `npx tsc --noEmit` |
 | Lint | `eslint` + `eslint-config-next` | `npm run lint` |

@@ -1,0 +1,1007 @@
+{
+  "generatedAt": "2026-09-07T17:11:35.008Z",
+  "totals": {
+    "cases": 60,
+    "routerAccuracy": "60/60",
+    "phraseChecks": "38/38",
+    "groundedness": "87/97",
+    "byRoute": {
+      "index": 38,
+      "search": 12,
+      "general": 10
+    }
+  },
+  "results": [
+    {
+      "id": "index-rewrite-budget",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2950
+    },
+    {
+      "id": "index-hybrid-search",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 4,
+      "groundedTotal": 5,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1773
+    },
+    {
+      "id": "index-doc-intelligence",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 4,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 3061
+    },
+    {
+      "id": "index-orchestrator",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2625
+    },
+    {
+      "id": "index-content-safety",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1710
+    },
+    {
+      "id": "index-product-name",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2530
+    },
+    {
+      "id": "index-classify-node-name",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1900
+    },
+    {
+      "id": "index-valid-routes",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 6,
+      "groundedTotal": 6,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2473
+    },
+    {
+      "id": "index-run-adaptive-rag",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=no",
+        "rewrite",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 4369
+    },
+    {
+      "id": "index-qdrant-collection",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2271
+    },
+    {
+      "id": "index-qdrant-url",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2039
+    },
+    {
+      "id": "index-qdrant-distance",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2928
+    },
+    {
+      "id": "index-rrf",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 5,
+      "groundedTotal": 5,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2812
+    },
+    {
+      "id": "index-named-file-first",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 5,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2676
+    },
+    {
+      "id": "index-upload-replace",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2386
+    },
+    {
+      "id": "index-mongo-uri",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1293
+    },
+    {
+      "id": "index-mongo-db-name",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1092
+    },
+    {
+      "id": "index-mongo-collections",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 4,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2699
+    },
+    {
+      "id": "index-session-storage-key",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1322
+    },
+    {
+      "id": "index-history-window",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1390
+    },
+    {
+      "id": "index-session-title",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1579
+    },
+    {
+      "id": "index-tavily-key",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2582
+    },
+    {
+      "id": "index-tavily-max-results",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2233
+    },
+    {
+      "id": "index-tavily-missing-key",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 4,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2224
+    },
+    {
+      "id": "index-kept-docs",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2424
+    },
+    {
+      "id": "index-grade-readonly",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 4,
+      "groundedTotal": 4,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2651
+    },
+    {
+      "id": "index-two-rewrites",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 4,
+      "groundedTotal": 4,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2480
+    },
+    {
+      "id": "index-eval-command",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=3",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1474
+    },
+    {
+      "id": "index-chat-model",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1577
+    },
+    {
+      "id": "index-embedding-model",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2308
+    },
+    {
+      "id": "index-chunk-size",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2522
+    },
+    {
+      "id": "index-txt-only",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 3,
+      "groundedTotal": 3,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2630
+    },
+    {
+      "id": "index-azure-optional",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1439
+    },
+    {
+      "id": "index-no-login",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1412
+    },
+    {
+      "id": "index-docker-ports",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2178
+    },
+    {
+      "id": "index-api-sources",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=4",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 2511
+    },
+    {
+      "id": "index-ci-commands",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 2,
+      "groundedTotal": 2,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1418
+    },
+    {
+      "id": "index-three-routes",
+      "expectedRoute": "index",
+      "actualRoute": "index",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 1,
+      "groundedTotal": 1,
+      "trace": [
+        "route=index",
+        "retrieve=1",
+        "grade=yes",
+        "generate"
+      ],
+      "ms": 1811
+    },
+    {
+      "id": "search-champions-league",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 2150
+    },
+    {
+      "id": "search-weather-london",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 2091
+    },
+    {
+      "id": "search-headline",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 4105
+    },
+    {
+      "id": "search-weather-tokyo",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 1778
+    },
+    {
+      "id": "search-weather-sf",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 1751
+    },
+    {
+      "id": "search-bitcoin",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 1706
+    },
+    {
+      "id": "search-super-bowl",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 1685
+    },
+    {
+      "id": "search-fx-usd-gbp",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 2327
+    },
+    {
+      "id": "search-apple-stock",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 1967
+    },
+    {
+      "id": "search-premier-league",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 3925
+    },
+    {
+      "id": "search-spacex",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 3491
+    },
+    {
+      "id": "search-un-secretary",
+      "expectedRoute": "search",
+      "actualRoute": "search",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=search",
+        "webSearch=4",
+        "generate"
+      ],
+      "ms": 1774
+    },
+    {
+      "id": "general-hello",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1346
+    },
+    {
+      "id": "general-math",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1123
+    },
+    {
+      "id": "general-thanks",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1130
+    },
+    {
+      "id": "general-good-morning",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1353
+    },
+    {
+      "id": "general-subtract",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1128
+    },
+    {
+      "id": "general-multiply",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1142
+    },
+    {
+      "id": "general-divide",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1209
+    },
+    {
+      "id": "general-spell-cat",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1119
+    },
+    {
+      "id": "general-feet-inches",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1368
+    },
+    {
+      "id": "general-percent",
+      "expectedRoute": "general",
+      "actualRoute": "general",
+      "routePass": true,
+      "phrasePass": true,
+      "missingPhrases": [],
+      "groundedSupported": 0,
+      "groundedTotal": 0,
+      "trace": [
+        "route=general",
+        "general"
+      ],
+      "ms": 1269
+    }
+  ]
+}

@@ -2,27 +2,230 @@
   {
     "id": "index-rewrite-budget",
     "question": "What rewrite budget does the Adaptive RAG demo use?",
-    "expectedRoute": "index"
+    "expectedRoute": "index",
+    "mustContain": ["one"]
   },
   {
     "id": "index-hybrid-search",
     "question": "What is Azure AI Search hybrid search?",
-    "expectedRoute": "index"
+    "expectedRoute": "index",
+    "mustContain": ["vector", "keyword"]
   },
   {
     "id": "index-doc-intelligence",
     "question": "What does Azure Document Intelligence do in a RAG pipeline?",
-    "expectedRoute": "index"
+    "expectedRoute": "index",
+    "mustContain": ["extract"]
   },
   {
     "id": "index-orchestrator",
     "question": "Which orchestrator does this TypeScript Adaptive RAG project use?",
-    "expectedRoute": "index"
+    "expectedRoute": "index",
+    "mustContain": ["LangGraph"]
   },
   {
     "id": "index-content-safety",
     "question": "What does Azure AI Content Safety score?",
-    "expectedRoute": "index"
+    "expectedRoute": "index",
+    "mustContain": ["hate"]
+  },
+  {
+    "id": "index-product-name",
+    "question": "What is the product name of this project?",
+    "expectedRoute": "index",
+    "mustContain": ["Adaptive RAG"]
+  },
+  {
+    "id": "index-classify-node-name",
+    "question": "In the LangGraph orchestrator document, why is the classify node named classify instead of route?",
+    "expectedRoute": "index",
+    "mustContain": ["state"]
+  },
+  {
+    "id": "index-valid-routes",
+    "question": "What are the valid route values in the graph state?",
+    "expectedRoute": "index",
+    "mustContain": ["index", "search", "general"]
+  },
+  {
+    "id": "index-run-adaptive-rag",
+    "question": "What does runAdaptiveRag return?",
+    "expectedRoute": "index",
+    "mustContain": ["answer"]
+  },
+  {
+    "id": "index-qdrant-collection",
+    "question": "What is the default Qdrant collection name?",
+    "expectedRoute": "index",
+    "mustContain": ["adaptive_rag_docs"]
+  },
+  {
+    "id": "index-qdrant-url",
+    "question": "What is the default local Qdrant URL?",
+    "expectedRoute": "index",
+    "mustContain": ["6333"]
+  },
+  {
+    "id": "index-qdrant-distance",
+    "question": "What vector distance does this project use in Qdrant?",
+    "expectedRoute": "index",
+    "mustContain": ["cosine"]
+  },
+  {
+    "id": "index-rrf",
+    "question": "How does hybrid retrieve fuse vector and keyword hits?",
+    "expectedRoute": "index",
+    "mustContain": ["Reciprocal Rank Fusion"]
+  },
+  {
+    "id": "index-named-file-first",
+    "question": "What happens in retrieve if the question names a .txt file?",
+    "expectedRoute": "index",
+    "mustContain": [".txt"]
+  },
+  {
+    "id": "index-upload-replace",
+    "question": "What happens if I upload the same filename again?",
+    "expectedRoute": "index",
+    "mustContain": ["replace"]
+  },
+  {
+    "id": "index-mongo-uri",
+    "question": "According to mongodb-sessions.txt, what is the default MongoDB URI?",
+    "expectedRoute": "index",
+    "mustContain": ["27017"]
+  },
+  {
+    "id": "index-mongo-db-name",
+    "question": "According to mongodb-sessions.txt, what is the default MongoDB database name?",
+    "expectedRoute": "index",
+    "mustContain": ["adaptive_rag"]
+  },
+  {
+    "id": "index-mongo-collections",
+    "question": "Which MongoDB collections store chat?",
+    "expectedRoute": "index",
+    "mustContain": ["sessions", "messages"]
+  },
+  {
+    "id": "index-session-storage-key",
+    "question": "According to mongodb-sessions.txt, what localStorage key holds the session id?",
+    "expectedRoute": "index",
+    "mustContain": ["adaptive-rag-session"]
+  },
+  {
+    "id": "index-history-window",
+    "question": "According to mongodb-sessions.txt, how many recent turns are sent to classify and generate?",
+    "expectedRoute": "index",
+    "mustContain": ["16"]
+  },
+  {
+    "id": "index-session-title",
+    "question": "According to mongodb-sessions.txt, how is a new conversation title chosen?",
+    "expectedRoute": "index",
+    "mustContain": ["80"]
+  },
+  {
+    "id": "index-tavily-key",
+    "question": "Which env variable configures Tavily web search?",
+    "expectedRoute": "index",
+    "mustContain": ["TAVILY_API_KEY"]
+  },
+  {
+    "id": "index-tavily-max-results",
+    "question": "How many Tavily results does the search node request?",
+    "expectedRoute": "index",
+    "mustContain": ["4"]
+  },
+  {
+    "id": "index-tavily-missing-key",
+    "question": "What happens if TAVILY_API_KEY is missing?",
+    "expectedRoute": "index",
+    "mustContain": ["not configured"]
+  },
+  {
+    "id": "index-kept-docs",
+    "question": "What trace label marks file chunks kept during web search?",
+    "expectedRoute": "index",
+    "mustContain": ["keptDocs"]
+  },
+  {
+    "id": "index-grade-readonly",
+    "question": "Can the grade node call web search?",
+    "expectedRoute": "index",
+    "mustContain": ["cannot"]
+  },
+  {
+    "id": "index-two-rewrites",
+    "question": "May the trace contain two rewrite hops?",
+    "expectedRoute": "index",
+    "mustContain": ["never"]
+  },
+  {
+    "id": "index-eval-command",
+    "question": "According to eval-and-grade.txt, which npm script compares expectedRoute to the actual route?",
+    "expectedRoute": "index",
+    "mustContain": ["eval"]
+  },
+  {
+    "id": "index-chat-model",
+    "question": "According to models-and-chunking.txt, what is the default chat model?",
+    "expectedRoute": "index",
+    "mustContain": ["gpt-4o-mini"]
+  },
+  {
+    "id": "index-embedding-model",
+    "question": "What is the default embedding model?",
+    "expectedRoute": "index",
+    "mustContain": ["text-embedding-3-small"]
+  },
+  {
+    "id": "index-chunk-size",
+    "question": "What chunk size and overlap does the splitter use?",
+    "expectedRoute": "index",
+    "mustContain": ["1000", "150"]
+  },
+  {
+    "id": "index-txt-only",
+    "question": "Which upload format is accepted?",
+    "expectedRoute": "index",
+    "mustContain": [".txt"]
+  },
+  {
+    "id": "index-azure-optional",
+    "question": "According to models-and-chunking.txt, where does the Azure OpenAI client swap live?",
+    "expectedRoute": "index",
+    "mustContain": ["llm.ts"]
+  },
+  {
+    "id": "index-no-login",
+    "question": "According to the product scope document, does this Adaptive RAG app use login?",
+    "expectedRoute": "index",
+    "mustContain": ["no login"]
+  },
+  {
+    "id": "index-docker-ports",
+    "question": "Which ports do MongoDB and Qdrant use in Docker Compose?",
+    "expectedRoute": "index",
+    "mustContain": ["27017", "6333"]
+  },
+  {
+    "id": "index-api-sources",
+    "question": "Which API lists indexed files?",
+    "expectedRoute": "index",
+    "mustContain": ["/api/sources"]
+  },
+  {
+    "id": "index-ci-commands",
+    "question": "According to product-scope.txt, what does GitHub Actions run for CI?",
+    "expectedRoute": "index",
+    "mustContain": ["tsc"]
+  },
+  {
+    "id": "index-three-routes",
+    "question": "According to the product scope file, how many routes does classification pick from?",
+    "expectedRoute": "index",
+    "mustContain": ["three"]
   },
   {
     "id": "search-champions-league",
@@ -40,6 +243,51 @@
     "expectedRoute": "search"
   },
   {
+    "id": "search-weather-tokyo",
+    "question": "What is today's weather in Tokyo?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-weather-sf",
+    "question": "What is the current temperature in San Francisco?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-bitcoin",
+    "question": "What is the current Bitcoin price in USD?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-super-bowl",
+    "question": "Who won the most recent Super Bowl?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-fx-usd-gbp",
+    "question": "What is the current USD to GBP exchange rate?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-apple-stock",
+    "question": "What is Apple's latest stock price?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-premier-league",
+    "question": "What are today's Premier League scores?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-spacex",
+    "question": "When was the most recent SpaceX launch?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-un-secretary",
+    "question": "Who is the current United Nations Secretary-General?",
+    "expectedRoute": "search"
+  },
+  {
     "id": "general-hello",
     "question": "Hello, how are you?",
     "expectedRoute": "general"
@@ -47,6 +295,46 @@
   {
     "id": "general-math",
     "question": "What is 2 + 2?",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-thanks",
+    "question": "Thanks, that helps.",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-good-morning",
+    "question": "Good morning.",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-subtract",
+    "question": "What is 15 minus 7?",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-multiply",
+    "question": "What is 9 times 8?",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-divide",
+    "question": "What is 100 divided by 4?",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-spell-cat",
+    "question": "How do you spell the word cat?",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-feet-inches",
+    "question": "How many inches are in 3 feet?",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-percent",
+    "question": "What is 10 percent of 200?",
     "expectedRoute": "general"
   }
 ]

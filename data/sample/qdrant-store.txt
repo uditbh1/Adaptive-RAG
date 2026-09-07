@@ -1,0 +1,22 @@
+Qdrant vector store
+===================
+
+This file is part of the Adaptive RAG TypeScript knowledge base.
+
+Document embeddings live in Qdrant. The default collection name is
+adaptive_rag_docs. The default local URL is http://127.0.0.1:6333.
+Vectors use cosine distance and 1536 dimensions from text-embedding-3-small.
+
+Hybrid retrieve
+---------------
+Default retrieve fuses Qdrant vector search with a keyword scroll on the
+content field. The fusion method is Reciprocal Rank Fusion (RRF). If the
+question names a .txt file, those chunks are used first and hybrid search
+is skipped for that turn.
+
+Uploads
+-------
+Uploaded files are stored as one disk file per name under data/uploads.
+Re-uploading the same filename replaces the old vectors. Identical text
+is not embedded again. The sample origin cannot be deleted from the UI.
+The env variable for the collection is QDRANT_COLLECTION.

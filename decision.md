@@ -4,7 +4,7 @@ I keep architecture choices here so I do not lose the why. Old entries stay. If 
 
 Product: [prd.md](prd.md). Stack: [tech-stack.md](tech-stack.md). Graph: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). [`docs/DECISIONS.md`](docs/DECISIONS.md) only points here.
 
-Next ID: **D-021**.
+Next ID: **D-022**.
 
 ---
 
@@ -12,6 +12,7 @@ Next ID: **D-021**.
 
 | ID | Date | Status | Decision |
 | --- | --- | --- | --- |
+| D-021 | 2026-09-07 | Accepted | 8 sample files, 60 eval cases, phrase + groundedness report |
 | D-020 | 2026-09-07 | Accepted | Optional Azure OpenAI client + CI for tsc and lint |
 | D-019 | 2026-09-07 | Accepted | Groundedness eval, citations, and hop metrics |
 | D-018 | 2026-09-07 | Accepted | Hybrid retrieve and sidebar file list/delete |
@@ -28,7 +29,7 @@ Next ID: **D-021**.
 | D-009 | 2026-09-06 | Accepted | Graph node `classify` (state key stays `route`) |
 | D-010 | 2026-09-06 | Accepted | `Annotation.Root` for graph state, Zod for structured output |
 | D-011 | 2026-09-06 | Accepted | `.txt` only; no PDF in v1 |
-| D-012 | 2026-09-06 | Accepted | Seed from `data/sample/azure-ai.txt` when the store is empty |
+| D-012 | 2026-09-06 | Superseded by D-021 | Seed from `data/sample/azure-ai.txt` when the store is empty |
 | D-013 | 2026-09-07 | Accepted | Product docs: `prd.md`, `tech-stack.md`, this log |
 | D-014 | 2026-09-07 | Accepted | Qdrant is the vector store |
 | D-015 | 2026-09-07 | Accepted | MongoDB persists sessions and full chat history |
@@ -36,6 +37,24 @@ Next ID: **D-021**.
 ---
 
 ## Entries
+
+### D-021: 8 sample files, 60 eval cases, phrase + groundedness report
+
+| | |
+| --- | --- |
+| Date | 2026-09-07 |
+| Status | Accepted |
+| Area | eval |
+
+**Context:** Ten cases were too small. Groundedness only counted claims and did not check required facts. Only `azure-ai.txt` was seeded.
+
+**Decision:** Seed every `.txt` in `data/sample/`. Sixty cases (38 index, 12 search, 10 general). Index cases have `mustContain`. `npm run eval` writes `eval/RESULTS.md` for GitHub.
+
+**Why:** I can show router, phrase, and groundedness numbers on the repo without a hosted demo.
+
+**Follow-up:** Supersedes D-012 for seeding.
+
+---
 
 ### D-020: Optional Azure OpenAI client + CI for tsc and lint
 
@@ -190,7 +209,7 @@ Next ID: **D-021**.
 | | |
 | --- | --- |
 | Date | 2026-09-06 |
-| Status | Accepted |
+| Status | Superseded by D-021 |
 | Area | product |
 
 **Context:** A first run that requires a manual upload is a weak demo.

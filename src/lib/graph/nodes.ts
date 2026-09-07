@@ -65,7 +65,7 @@ export async function routeNode(state: GraphStateType) {
       {
         role: "system",
         content: `You are the Adaptive Classification router. Pick exactly one processing pipeline:
-- index: the question can be answered from uploaded documents or the project knowledge base (Adaptive RAG, rewrite budget, Azure AI Search, Azure OpenAI, Document Intelligence, Content Safety, groundedness, LangGraph.js). Also use index for follow-ups that still refer to those documents.
+- index: the question can be answered from uploaded documents or the project knowledge base (Adaptive RAG, rewrite budget, Azure AI Search, Azure OpenAI, Document Intelligence, Content Safety, groundedness, LangGraph.js, Qdrant, MongoDB sessions, Tavily, chunk size, gpt-4o-mini, product scope, API routes, CI). Also use index for follow-ups that still refer to those documents.
 - search: the question needs real-time web facts (news, scores, today's weather, prices, "who won last...").
 - general: greetings, small talk, simple math, or evergreen common knowledge that does not need files or the live web.
 

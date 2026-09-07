@@ -120,7 +120,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | Three pipelines visible in UI | Done |
 | Upload + sample seed into Qdrant | Done |
 | MongoDB session history | Done |
-| Router eval (10 cases) | Done |
+| Router eval (60 cases, phrase + groundedness) | Done |
 | Hybrid retrieve + file list/delete | Done |
 | Groundedness eval, citations, hop metrics | Done |
 | Optional Azure OpenAI client | Done |

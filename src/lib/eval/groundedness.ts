@@ -52,6 +52,11 @@ export function claimIsSupported(claim: string, corpus: string): boolean {
   return hits / words.length >= 0.45;
 }
 
+export function missingRequiredPhrases(answer: string, phrases: string[]) {
+  const haystack = answer.toLowerCase();
+  return phrases.filter((phrase) => !haystack.includes(phrase.toLowerCase()));
+}
+
 export function scoreGroundedness(answer: string, documents: string[]) {
   const corpus = documents.join("\n\n");
   const claims = splitClaims(answer);

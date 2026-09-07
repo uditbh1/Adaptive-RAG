@@ -1,0 +1,19 @@
+Tavily web search
+=================
+
+This file is part of the Adaptive RAG TypeScript knowledge base.
+
+Live web facts use Tavily. The env variable is TAVILY_API_KEY. The search
+node requests a maximum of 4 results. Search is used for the search route
+and as a fallback after a failed index grade.
+
+If TAVILY_API_KEY is missing, the web node does not crash. It returns a
+short snippet that says web search is not configured and tells the user
+to set TAVILY_API_KEY in .env.local.
+
+Mixed questions
+---------------
+If a question names an uploaded file and also asks for a live fact such
+as weather or a latest score, the graph keeps the file chunks and still
+calls web search. Those kept file chunks are labeled keptDocs in the
+trace.

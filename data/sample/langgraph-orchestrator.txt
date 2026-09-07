@@ -1,0 +1,21 @@
+LangGraph orchestrator
+======================
+
+This file is part of the Adaptive RAG TypeScript knowledge base.
+
+The graph library is LangGraph.js. The compiled object is a StateGraph.
+The classify node is named classify because LangGraph will not allow a
+node name that matches a state key. The state field for the chosen path
+is route. Valid route values are index, search, and general.
+
+Graph hops
+----------
+START leads to classify. After classify, index questions go to retrieve,
+search questions go to webSearch, and general questions go to generalLlm.
+Retrieve always goes to grade. After grade, a relevant result goes to
+generate unless the question also needs a live web fact. A weak result
+may rewrite once, then retrieve again. After the rewrite budget is spent,
+the graph falls back to webSearch and then generate.
+
+The public runner is runAdaptiveRag. It returns answer, route, trace,
+sources, and metrics.

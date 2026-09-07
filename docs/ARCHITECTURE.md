@@ -55,6 +55,8 @@ Defined in [`src/lib/graph/state.ts`](../src/lib/graph/state.ts):
 
 ## APIs
 
+Sample knowledge base: every `.txt` in [`data/sample/`](../data/sample/) is seeded if that filename is not already in Qdrant.
+
 **POST `/api/upload`**  
 Form field `file`. `.txt` only. Chunk, embed, upsert into Qdrant. Same name replaces.
 

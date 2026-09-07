@@ -1,10 +1,13 @@
 import { config } from "dotenv";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { scoreGroundedness } from "../src/lib/eval/groundedness";
+import {
+  missingRequiredPhrases,
+  scoreGroundedness,
+} from "../src/lib/eval/groundedness";
 import { runAdaptiveRag } from "../src/lib/graph";
 import { hasLlmCredentials } from "../src/lib/llm";
-import { getVectorStore } from "../src/lib/rag/store";
+import { getVectorStore, seedSampleDocuments } from "../src/lib/rag/store";
 
 config({ path: path.join(process.cwd(), ".env.local") });
 config();
@@ -13,7 +16,107 @@ type EvalCase = {
   id: string;
   question: string;
   expectedRoute: "index" | "search" | "general";
+  mustContain?: string[];
 };
+
+type CaseResult = {
+  id: string;
+  expectedRoute: string;
+  actualRoute: string;
+  routePass: boolean;
+  phrasePass: boolean;
+  missingPhrases: string[];
+  groundedSupported: number;
+  groundedTotal: number;
+  trace: string[];
+  ms: number;
+};
+
+function writeReport(results: CaseResult[]) {
+  const routePass = results.filter((item) => item.routePass).length;
+  const phraseCases = results.filter((item) => item.expectedRoute === "index");
+  const phrasePass = phraseCases.filter((item) => item.phrasePass).length;
+  const groundedSupported = results.reduce(
+    (sum, item) => sum + item.groundedSupported,
+    0,
+  );
+  const groundedTotal = results.reduce((sum, item) => sum + item.groundedTotal, 0);
+  const byRoute = {
+    index: results.filter((item) => item.expectedRoute === "index").length,
+    search: results.filter((item) => item.expectedRoute === "search").length,
+    general: results.filter((item) => item.expectedRoute === "general").length,
+  };
+
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    totals: {
+      cases: results.length,
+      routerAccuracy: `${routePass}/${results.length}`,
+      phraseChecks: `${phrasePass}/${phraseCases.length}`,
+      groundedness: `${groundedSupported}/${groundedTotal}`,
+      byRoute,
+    },
+    results,
+  };
+
+  writeFileSync(
+    path.join(process.cwd(), "eval", "latest.json"),
+    `${JSON.stringify(payload, null, 2)}\n`,
+    "utf8",
+  );
+
+  const failRows = results
+    .filter((item) => !item.routePass || !item.phrasePass)
+    .map(
+      (item) =>
+        `| ${item.id} | ${item.expectedRoute} | ${item.actualRoute} | ${item.missingPhrases.join(", ") || "—"} |`,
+    )
+    .join("\n");
+
+  const markdown = `# Eval results
+
+Generated: ${payload.generatedAt}
+
+## Scores
+
+| Metric | Value |
+| --- | --- |
+| Cases | ${results.length} |
+| Router accuracy | ${routePass}/${results.length} |
+| Phrase checks (index mustContain) | ${phrasePass}/${phraseCases.length} |
+| Groundedness (supported claims) | ${groundedSupported}/${groundedTotal} |
+
+## Case mix
+
+| Route | Count |
+| --- | --- |
+| index | ${byRoute.index} |
+| search | ${byRoute.search} |
+| general | ${byRoute.general} |
+
+\`\`\`mermaid
+pie showData
+  title Eval case mix
+  "index" : ${byRoute.index}
+  "search" : ${byRoute.search}
+  "general" : ${byRoute.general}
+\`\`\`
+
+## Failures
+
+${failRows || "_None._"}
+
+Run \`npm run eval\` to refresh this file.
+`;
+
+  writeFileSync(
+    path.join(process.cwd(), "eval", "RESULTS.md"),
+    markdown,
+    "utf8",
+  );
+
+  return payload.totals;
+}
 
 async function main() {
   if (!hasLlmCredentials()) {
@@ -22,58 +125,75 @@ async function main() {
   }
 
   await getVectorStore();
+  await seedSampleDocuments();
 
   const cases = JSON.parse(
     readFileSync(path.join(process.cwd(), "eval", "cases.json"), "utf8"),
   ) as EvalCase[];
 
-  let passed = 0;
-  let groundedSupported = 0;
-  let groundedTotal = 0;
-  let indexCases = 0;
-
+  const results: CaseResult[] = [];
   console.log(
-    "id".padEnd(28),
-    "expected".padEnd(10),
-    "actual".padEnd(10),
-    "result",
+    "id".padEnd(32),
+    "exp".padEnd(8),
+    "got".padEnd(8),
+    "route",
+    "phrase",
+    "ground",
     "  path",
   );
-  console.log("-".repeat(100));
+  console.log("-".repeat(110));
 
   for (const testCase of cases) {
     const result = await runAdaptiveRag(testCase.question);
-    const ok = result.route === testCase.expectedRoute;
-    if (ok) passed += 1;
+    const routePass = result.route === testCase.expectedRoute;
+    const phrases = testCase.mustContain ?? [];
+    const missing = missingRequiredPhrases(result.answer, phrases);
+    const phrasePass = missing.length === 0;
+    const grounded =
+      testCase.expectedRoute === "index" && result.route === "index"
+        ? scoreGroundedness(
+            result.answer,
+            result.documents.map((doc) => doc.pageContent),
+          )
+        : { supported: 0, total: 0 };
 
-    if (testCase.expectedRoute === "index" && result.route === "index") {
-      indexCases += 1;
-      const score = scoreGroundedness(
-        result.answer,
-        result.documents.map((doc) => doc.pageContent),
-      );
-      groundedSupported += score.supported;
-      groundedTotal += score.total;
+    const row: CaseResult = {
+      id: testCase.id,
+      expectedRoute: testCase.expectedRoute,
+      actualRoute: String(result.route),
+      routePass,
+      phrasePass,
+      missingPhrases: missing,
+      groundedSupported: grounded.supported,
+      groundedTotal: grounded.total,
+      trace: result.trace,
+      ms: result.metrics.reduce((sum, hop) => sum + hop.ms, 0),
+    };
+    results.push(row);
+
+    const ok = routePass && phrasePass;
+    console.log(
+      testCase.id.padEnd(32),
+      testCase.expectedRoute.padEnd(8),
+      String(result.route).padEnd(8),
+      routePass ? "PASS" : "FAIL",
+      phrasePass ? "PASS" : "FAIL",
+      `${grounded.supported}/${grounded.total}`.padEnd(7),
+      `  ${result.trace.join(" -> ")}  (${row.ms}ms)`,
+    );
+    if (!ok && missing.length > 0) {
+      console.log(`    missing phrases: ${missing.join(", ")}`);
     }
-
-    const totalMs = result.metrics.reduce((sum, hop) => sum + hop.ms, 0);
-    console.log(
-      testCase.id.padEnd(28),
-      testCase.expectedRoute.padEnd(10),
-      String(result.route).padEnd(10),
-      ok ? "PASS" : "FAIL",
-      `  ${result.trace.join(" -> ")}  (${totalMs}ms)`,
-    );
   }
 
-  console.log("-".repeat(100));
-  console.log(`Router accuracy: ${passed}/${cases.length}`);
-  if (groundedTotal > 0) {
-    console.log(
-      `Groundedness (index claims): ${groundedSupported}/${groundedTotal} across ${indexCases} index cases`,
-    );
-  }
-  if (passed < cases.length) {
+  const totals = writeReport(results);
+  console.log("-".repeat(110));
+  console.log(`Router accuracy: ${totals.routerAccuracy}`);
+  console.log(`Phrase checks:   ${totals.phraseChecks}`);
+  console.log(`Groundedness:    ${totals.groundedness}`);
+
+  const failed = results.some((item) => !item.routePass || !item.phrasePass);
+  if (failed) {
     process.exitCode = 1;
   }
 }

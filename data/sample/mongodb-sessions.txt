@@ -1,0 +1,22 @@
+MongoDB sessions
+================
+
+This file is part of the Adaptive RAG TypeScript knowledge base.
+
+Chat history is stored in MongoDB. The default URI is
+mongodb://127.0.0.1:27017. The default database name is adaptive_rag.
+Two collections are used: sessions and messages.
+
+Browser state
+-------------
+The browser keeps sessionId in localStorage under the key
+adaptive-rag-session. Refresh restores the conversation if that id still
+exists. There is no login. One browser has one current session until
+New chat is clicked.
+
+History window
+--------------
+Classify, generate, and general receive the last 16 turns as a text
+block. The first user message becomes the session title, truncated to
+80 characters. Empty sessions with zero messages are not listed in the
+sidebar.

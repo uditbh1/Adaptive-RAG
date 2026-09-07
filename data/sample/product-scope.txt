@@ -1,0 +1,26 @@
+Product scope
+=============
+
+This file is part of the Adaptive RAG TypeScript knowledge base.
+
+The product name is Adaptive RAG TypeScript. The app is one Next.js
+project with the App Router. There is no login, no PDF upload, and no
+multi-agent roleplay. Docker Compose starts MongoDB on port 27017 and
+Qdrant on port 6333. The Next.js app itself is not packaged in Docker.
+
+Routes
+------
+There are exactly three routes: index for documents, search for live
+web facts, and general for greetings, simple math, and common knowledge
+that does not need files or the live web.
+
+API surface
+-----------
+POST /api/upload accepts a .txt file. GET /api/sources lists indexed
+files. DELETE /api/sources removes an upload. POST /api/query runs the
+graph. GET /api/query?sessionId= returns chat history.
+
+CI
+--
+GitHub Actions runs npx tsc --noEmit and npm run lint. Eval is not in
+CI because it needs model API keys.

@@ -8,7 +8,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { getEmbeddings } from "../llm";
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const SAMPLE_PATH = path.join(DATA_DIR, "sample", "azure-ai.txt");
+const SAMPLE_DIR = path.join(DATA_DIR, "sample");
 const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
 
 const splitter = new RecursiveCharacterTextSplitter({
@@ -85,18 +85,32 @@ export async function getVectorStore() {
   if (!vectorStore) {
     vectorStore = await ensureCollection();
   }
-  if ((await getChunkCount()) === 0) {
-    await seedSampleDocument();
-  }
+  await seedSampleDocuments();
   return vectorStore;
 }
 
+export async function seedSampleDocuments() {
+  const names = (await fs.readdir(SAMPLE_DIR))
+    .filter((name) => name.toLowerCase().endsWith(".txt"))
+    .sort();
+  const indexed = new Set(
+    (await listIndexedSources()).map((source) => source.toLowerCase()),
+  );
+  let added = 0;
+  for (const name of names) {
+    if (indexed.has(name.toLowerCase())) continue;
+    const text = await fs.readFile(path.join(SAMPLE_DIR, name), "utf8");
+    added += await addTextDocument(text, {
+      source: name,
+      origin: "sample",
+    });
+    indexed.add(name.toLowerCase());
+  }
+  return added;
+}
+
 export async function seedSampleDocument() {
-  const text = await fs.readFile(SAMPLE_PATH, "utf8");
-  return addTextDocument(text, {
-    source: "azure-ai.txt",
-    origin: "sample",
-  });
+  return seedSampleDocuments();
 }
 
 export async function addTextDocument(
