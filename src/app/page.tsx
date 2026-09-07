@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle2, CircleAlert, FileUp, Menu, MessageSquarePlus, PanelLeft, Send, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 type Message = {
   role: "user" | "assistant";
@@ -18,17 +25,17 @@ type Conversation = {
 
 const SESSION_KEY = "adaptive-rag-session";
 
-function chipClass(step: string) {
-  if (step.startsWith("route=search") || step.startsWith("webSearch")) {
-    return "chip search";
-  }
-  if (step.startsWith("route=general") || step === "general") {
-    return "chip general";
-  }
-  if (step.includes("=no") || step.includes("skipped")) {
-    return "chip no";
-  }
-  return "chip";
+const SUGGESTIONS = [
+  { label: "Index", text: "What rewrite budget does this Adaptive RAG demo use?" },
+  { label: "General", text: "What is 2 + 2?" },
+  { label: "Search", text: "Who won the most recent UEFA Champions League final?" },
+];
+
+function pipelineVariant(route?: string) {
+  if (route === "search") return "search" as const;
+  if (route === "general") return "general" as const;
+  if (route === "index") return "index" as const;
+  return "muted" as const;
 }
 
 function pipelineLabel(route?: string) {
@@ -49,24 +56,49 @@ function formatWhen(value: string) {
   });
 }
 
+function chipTone(step: string) {
+  if (step.includes("search") || step.startsWith("webSearch")) {
+    return "bg-sky-400/20 text-sky-200";
+  }
+  if (step.includes("general")) return "bg-emerald-400/15 text-emerald-200";
+  if (step.includes("=no") || step.includes("skipped")) {
+    return "bg-rose-400/15 text-rose-200";
+  }
+  return "bg-primary/15 text-primary";
+}
+
 export default function HomePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [question, setQuestion] = useState("");
-  const [status, setStatus] = useState("Connecting to session…");
+  const [status, setStatus] = useState("Connecting…");
   const [busy, setBusy] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; text: string } | null>(
+    null,
+  );
+  const fileRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const toastTimer = useRef<number | null>(null);
+
+  function showToast(kind: "success" | "error", text: string) {
+    if (toastTimer.current) {
+      window.clearTimeout(toastTimer.current);
+    }
+    setToast({ kind, text });
+    toastTimer.current = window.setTimeout(() => setToast(null), 4500);
+  }
 
   const loadConversations = useCallback(async () => {
     try {
       const res = await fetch("/api/sessions");
-      const data = (await res.json()) as { sessions?: Conversation[]; error?: string };
+      const data = (await res.json()) as { sessions?: Conversation[] };
       if (Array.isArray(data.sessions)) {
         setConversations(data.sessions);
       }
     } catch {
-      // Query load will surface Mongo errors.
+      // surfaced by query load
     }
   }, []);
 
@@ -96,13 +128,23 @@ export default function HomePage() {
           setMessages(data.history);
         }
         if (typeof data.chunksIndexed === "number") {
-          setStatus(
-            `${data.chunksIndexed} chunks in Qdrant. Previous chats stay in History.`,
-          );
+          setStatus(`${data.chunksIndexed} docs in Qdrant`);
         }
       })
-      .catch(() => setStatus("Could not load session. Is MongoDB running?"));
+      .catch(() => setStatus("MongoDB unavailable"));
   }, [sessionId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, busy]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) {
+        window.clearTimeout(toastTimer.current);
+      }
+    };
+  }, []);
 
   const canAsk = useMemo(
     () => Boolean(sessionId) && question.trim().length > 0 && !busy,
@@ -121,42 +163,56 @@ export default function HomePage() {
     setSessionId(id);
     setMessages([]);
     setQuestion("");
-    setStatus("New conversation. Older chats remain in History.");
+    setStatus("New chat");
   }
 
-  async function onUpload(event: FormEvent) {
-    event.preventDefault();
-    if (!file) {
-      setStatus("Choose a .txt file first.");
+  async function onUpload(file: File) {
+    if (!file.name.toLowerCase().endsWith(".txt")) {
+      showToast("error", "Only .txt files can be indexed.");
       return;
     }
     setBusy(true);
-    setStatus("Indexing into Qdrant…");
+    setStatus("Indexing…");
     try {
       const body = new FormData();
       body.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body });
-      const data = (await res.json()) as { error?: string; chunks?: number; filename?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        chunks?: number;
+        filename?: string;
+        reused?: boolean;
+      };
       if (!res.ok) {
-        setStatus(data.error ?? "Upload failed.");
+        const message = data.error ?? "Upload failed";
+        setStatus(message);
+        showToast("error", message);
         return;
       }
-      setStatus(`Indexed ${data.filename} in Qdrant. Total chunks: ${data.chunks}.`);
+      const name = data.filename ?? file.name;
+      const chunks = data.chunks ?? 0;
+      setStatus(`Indexed ${name} · ${chunks} chunks`);
+      showToast(
+        "success",
+        data.reused
+          ? `${name} was already indexed. Using the existing copy.`
+          : `${name} was indexed (${chunks} chunks).`,
+      );
     } catch {
-      setStatus("Upload failed.");
+      setStatus("Upload failed");
+      showToast("error", "Could not index the file. Is Qdrant running?");
     } finally {
       setBusy(false);
     }
   }
 
-  async function onAsk(event: FormEvent) {
-    event.preventDefault();
-    if (!canAsk || !sessionId) return;
-    const query = question.trim();
+  async function send(text: string) {
+    if (!sessionId || !text.trim() || busy) return;
+    const query = text.trim();
     setQuestion("");
     setMessages((current) => [...current, { role: "user", content: query }]);
     setBusy(true);
-    setStatus("Classifying query type…");
+    setStatus("Thinking…");
     try {
       const res = await fetch("/api/query", {
         method: "POST",
@@ -171,7 +227,7 @@ export default function HomePage() {
         chunksIndexed?: number;
       };
       if (!res.ok) {
-        setStatus(data.error ?? "Query failed.");
+        setStatus(data.error ?? "Query failed");
         setMessages((current) => [
           ...current,
           { role: "assistant", content: data.error ?? "Query failed." },
@@ -187,144 +243,274 @@ export default function HomePage() {
           trace: data.trace,
         },
       ]);
-      const pipeline = pipelineLabel(data.route) ?? data.route;
       setStatus(
-        `Pipeline: ${pipeline}. Chunks in Qdrant: ${data.chunksIndexed ?? "?"}.`,
+        `${pipelineLabel(data.route) ?? "Answer"} · ${data.chunksIndexed ?? "?"} chunks`,
       );
       await loadConversations();
     } catch {
-      setStatus("Query failed.");
+      setStatus("Query failed");
     } finally {
       setBusy(false);
     }
   }
 
+  function onAsk(event: FormEvent) {
+    event.preventDefault();
+    void send(question);
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void send(question);
+    }
+  }
+
   return (
-    <div className="shell">
-      <aside className="history" aria-label="Conversation history">
-        <div className="history-head">
-          <h2>History</h2>
-          <button type="button" className="secondary" onClick={startNewConversation} disabled={busy}>
-            New
-          </button>
-        </div>
-        {conversations.length === 0 ? (
-          <p className="empty">No saved chats yet. Send a message, then they appear here.</p>
-        ) : (
-          <ul className="history-list">
-            {conversations.map((item) => (
-              <li key={item.sessionId}>
-                <button
-                  type="button"
-                  className={item.sessionId === sessionId ? "history-item active" : "history-item"}
-                  onClick={() => openConversation(item.sessionId)}
-                  disabled={busy}
-                >
-                  <span className="history-title">{item.title}</span>
-                  <span className="history-meta">
-                    {item.messageCount} messages
-                    {item.updatedAt ? ` · ${formatWhen(item.updatedAt)}` : ""}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
+    <div className="flex h-dvh overflow-hidden bg-background">
+      <AnimatePresence initial={false}>
+        {sidebarOpen ? (
+          <motion.aside
+            key="sidebar"
+            initial={{ x: -24, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -24, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex w-[280px] shrink-0 flex-col border-r border-border bg-card/60"
+          >
+            <div className="flex items-center justify-between gap-2 px-3 py-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Sparkles className="size-4 text-primary" />
+                Adaptive RAG
+              </div>
+              <Button variant="ghost" size="iconSm" onClick={() => setSidebarOpen(false)}>
+                <PanelLeft className="size-4" />
+              </Button>
+            </div>
+            <div className="px-3 pb-3">
+              <Button className="w-full" size="sm" onClick={startNewConversation} disabled={busy}>
+                <MessageSquarePlus className="size-4" />
+                New chat
+              </Button>
+            </div>
+            <ScrollArea className="flex-1 px-2 pb-4">
+              {conversations.length === 0 ? (
+                <p className="px-2 text-xs text-muted-foreground">
+                  Send a message and it will show up here.
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {conversations.map((item) => (
+                    <li key={item.sessionId}>
+                      <button
+                        type="button"
+                        onClick={() => openConversation(item.sessionId)}
+                        disabled={busy}
+                        className={cn(
+                          "w-full rounded-xl px-3 py-2 text-left transition-colors",
+                          item.sessionId === sessionId
+                            ? "bg-accent text-foreground"
+                            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                        )}
+                      >
+                        <span className="line-clamp-2 text-sm">{item.title}</span>
+                        <span className="mt-1 block text-[11px] opacity-70">
+                          {item.messageCount} msgs
+                          {item.updatedAt ? ` · ${formatWhen(item.updatedAt)}` : ""}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </ScrollArea>
+          </motion.aside>
+        ) : null}
+      </AnimatePresence>
 
-      <main className="app">
-        <header className="header">
-          <h1>Adaptive RAG</h1>
-          <p>
-            Intelligent query routing classifies each question into one pipeline.
-            Index uses your documents in Qdrant. Search uses the live web. General
-            uses the model only. Chats are stored in MongoDB. Use History to reopen
-            an earlier conversation.
-          </p>
-        </header>
-
-        <section className="pipelines" aria-label="Query types">
-          <article>
-            <h3>Index</h3>
-            <p>Answerable from uploaded documents in Qdrant.</p>
-          </article>
-          <article>
-            <h3>General</h3>
-            <p>Answerable from general knowledge. No retrieval.</p>
-          </article>
-          <article>
-            <h3>Search</h3>
-            <p>Needs real-time web search.</p>
-          </article>
-        </section>
-
-        <section className="panel">
-          <h2>Upload a .txt file</h2>
-          <form className="upload-row" onSubmit={onUpload}>
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            {!sidebarOpen ? (
+              <Button variant="ghost" size="iconSm" onClick={() => setSidebarOpen(true)}>
+                <Menu className="size-4" />
+              </Button>
+            ) : null}
+            <div>
+              <p className="text-sm font-medium">Chat</p>
+              <p className="text-xs text-muted-foreground">{status}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <input
+              ref={fileRef}
               type="file"
               accept=".txt,text/plain"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void onUpload(file);
+                event.target.value = "";
+              }}
             />
-            <button type="submit" disabled={busy}>
-              Index file
-            </button>
-          </form>
-          <p className="status">{status}</p>
-        </section>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() => fileRef.current?.click()}
+            >
+              <FileUp className="size-4" />
+              Index .txt
+            </Button>
+          </div>
+        </header>
 
-        <section className="panel">
-          <h2>Ask</h2>
-          <form onSubmit={onAsk}>
-            <textarea
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Try: What rewrite budget does this Adaptive RAG demo use?"
-            />
-            <div className="ask-row" style={{ marginTop: 10 }}>
-              <button type="submit" disabled={!canAsk}>
-                {busy ? "Running graph…" : "Run Adaptive RAG"}
-              </button>
-              <button type="button" className="secondary" onClick={startNewConversation} disabled={busy}>
-                New conversation
-              </button>
-            </div>
-          </form>
-
-          <div className="messages">
-            {messages.length === 0 ? (
-              <p className="empty">
-                No turns in this conversation yet. Click a chat in History to reopen
-                an older one.
-              </p>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6">
+            {messages.length === 0 && !busy ? (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="m-auto max-w-lg text-center"
+              >
+                <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                  <Sparkles className="size-6" />
+                </div>
+                <h1 className="text-2xl font-semibold tracking-tight">How can I help?</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  I route each question to Index, Search, or General. Ask something, or start with a
+                  suggestion.
+                </p>
+                <div className="mt-6 flex flex-col gap-2">
+                  {SUGGESTIONS.map((item) => (
+                    <button
+                      key={item.text}
+                      type="button"
+                      onClick={() => void send(item.text)}
+                      className="rounded-2xl border border-border bg-card px-4 py-3 text-left text-sm hover:bg-accent"
+                    >
+                      <span className="mr-2 text-xs text-primary">{item.label}</span>
+                      {item.text}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
             ) : (
-              messages.map((message, index) => {
-                const pipeline = pipelineLabel(message.route);
-                return (
-                  <article key={`${message.role}-${index}`} className={`bubble ${message.role}`}>
-                    <div className="who">
-                      {message.role}
-                      {pipeline ? (
-                        <span className={`pipeline-tag ${message.route}`}>{pipeline}</span>
-                      ) : null}
-                    </div>
-                    <div className="answer">{message.content}</div>
-                    {message.trace && message.trace.length > 0 ? (
-                      <div className="trace" aria-label="graph path">
-                        {message.trace.map((step, stepIndex) => (
-                          <span key={`${step}-${stepIndex}`} className={chipClass(step)}>
-                            {step}
-                          </span>
+              <div className="flex flex-col gap-5">
+                <AnimatePresence initial={false}>
+                  {messages.map((message, index) => {
+                    const pipeline = pipelineLabel(message.route);
+                    const isUser = message.role === "user";
+                    return (
+                      <motion.article
+                        key={`${message.role}-${index}-${message.content.slice(0, 12)}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.22 }}
+                        className={cn("flex", isUser ? "justify-end" : "justify-start")}
+                      >
+                        <div
+                          className={cn(
+                            "max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-6",
+                            isUser
+                              ? "rounded-br-md bg-primary text-primary-foreground"
+                              : "rounded-bl-md bg-card text-foreground",
+                          )}
+                        >
+                          {!isUser && pipeline ? (
+                            <Badge variant={pipelineVariant(message.route)} className="mb-2">
+                              {pipeline}
+                            </Badge>
+                          ) : null}
+                          <div className="whitespace-pre-wrap">{message.content}</div>
+                          {message.trace && message.trace.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-1 font-mono text-[10px]">
+                              {message.trace.map((step, stepIndex) => (
+                                <span
+                                  key={`${step}-${stepIndex}`}
+                                  className={cn("rounded-full px-2 py-0.5", chipTone(step))}
+                                >
+                                  {step}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </motion.article>
+                    );
+                  })}
+                </AnimatePresence>
+                {busy ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="rounded-3xl rounded-bl-md bg-card px-4 py-3">
+                      <div className="flex gap-1">
+                        {[0, 1, 2].map((dot) => (
+                          <motion.span
+                            key={dot}
+                            className="size-1.5 rounded-full bg-muted-foreground"
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ duration: 0.6, repeat: Infinity, delay: dot * 0.12 }}
+                          />
                         ))}
                       </div>
-                    ) : null}
-                  </article>
-                );
-              })
+                    </div>
+                  </motion.div>
+                ) : null}
+                <div ref={bottomRef} />
+              </div>
             )}
           </div>
-        </section>
-      </main>
+        </div>
+
+        <AnimatePresence>
+          {toast ? (
+            <motion.div
+              role="status"
+              aria-live="polite"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
+              className={cn(
+                "pointer-events-none absolute bottom-28 right-6 z-50 flex max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg",
+                toast.kind === "success"
+                  ? "border-emerald-500/30 bg-card text-foreground"
+                  : "border-rose-500/30 bg-card text-foreground",
+              )}
+            >
+              {toast.kind === "success" ? (
+                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-400" />
+              ) : (
+                <CircleAlert className="mt-0.5 size-5 shrink-0 text-rose-400" />
+              )}
+              <p>{toast.text}</p>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <div className="border-t border-border bg-background/80 px-4 py-3 backdrop-blur">
+          <form onSubmit={onAsk} className="mx-auto flex w-full max-w-3xl items-end gap-2">
+            <Textarea
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={onKeyDown}
+              rows={1}
+              placeholder="Message Adaptive RAG…"
+              className="max-h-36 min-h-12"
+            />
+            <Button type="submit" size="icon" disabled={!canAsk} aria-label="Send">
+              <Send className="size-4" />
+            </Button>
+          </form>
+          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">
+            Enter to send · Shift+Enter for a new line
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

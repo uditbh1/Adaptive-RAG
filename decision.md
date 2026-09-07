@@ -15,7 +15,7 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 
 ## How to update this file
 
-1. Add a row to the **Index** (next ID: `D-016`).
+1. Add a row to the **Index** (next ID: `D-018`).
 2. Paste the template at the **top of the Entries section** (newest first).
 3. If this replaces an older call, set that entry to `Superseded` and link the new ID.
 4. If the choice changes product scope or libraries, also edit `prd.md` and/or `tech-stack.md`.
@@ -46,6 +46,8 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 
 | ID | Date | Status | Decision |
 | --- | --- | --- | --- |
+| D-017 | 2026-09-07 | Accepted | Re-upload of the same `.txt` replaces, does not stack |
+| D-016 | 2026-09-07 | Accepted | Named-file retrieve + keep file chunks on web fallback |
 | D-001 | 2026-09-06 | Accepted | One Next.js TypeScript app, not FastAPI + Streamlit |
 | D-002 | 2026-09-06 | Accepted | LangGraph.js `StateGraph` for Adaptive RAG |
 | D-003 | 2026-09-06 | Accepted | Three routes only: index, search, general |
@@ -65,6 +67,46 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 ---
 
 ## Entries
+
+### D-017: Re-upload of the same `.txt` replaces, does not stack
+
+| | |
+| --- | --- |
+| Date | 2026-09-07 |
+| Status | Accepted |
+| Area | product |
+
+**Context:** Each Index click wrote `data/uploads/{timestamp}-{name}` and inserted new Qdrant points. `bodymeasurements.txt` appeared three times with the same content.
+
+**Options:** Keep every version; skip identical content and keep one disk file per name; add a versions UI.
+
+**Decision:** Save as `data/uploads/{filename}`. If that name is already indexed with the same text, skip embedding. If the text changed, replace the old upload vectors. Collapse leftover timestamped copies.
+
+**Why:** The folder and the vector store should show what the user indexed, not how many times they clicked.
+
+**Follow-up:** `src/lib/rag/store.ts` `saveUpload` / `reconcileUploads`.
+
+---
+
+### D-016: Named-file retrieve + keep file chunks on web fallback
+
+| | |
+| --- | --- |
+| Date | 2026-09-07 |
+| Status | Accepted |
+| Area | graph |
+
+**Context:** A user indexed `bodymeasurements.txt` and asked to summarise it plus San Francisco weather. Similarity search used the full mixed question, returned Azure sample chunks, graded them irrelevant, then web search replaced the document list. The model said it did not know the file.
+
+**Options:** Fourth hybrid route; filename-aware retrieve and merge on web search; leave single-vector retrieve as-is.
+
+**Decision:** If the question names an indexed `.txt`, retrieve those chunks first. A named-file hit is relevant. Mixed file + live questions still web-search after grade. Web search appends snippets and keeps earlier file chunks. Still three routes (D-003).
+
+**Why:** The file was already in Qdrant. The failure was retrieve + replace, not missing index.
+
+**Follow-up:** `src/lib/rag/store.ts`, `src/lib/graph/nodes.ts`.
+
+---
 
 ### D-015: MongoDB persists sessions and full chat history
 

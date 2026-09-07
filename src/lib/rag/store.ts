@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { QdrantClient } from "@qdrant/js-client-rest";
@@ -92,7 +93,9 @@ export async function addTextDocument(
 ) {
   const store = vectorStore ?? (await ensureCollection());
   vectorStore = store;
-  const docs = await splitter.createDocuments([text], [metadata]);
+  const source = typeof metadata.source === "string" ? metadata.source : "";
+  const labeled = source ? `Source file: ${source}\n\n${text}` : text;
+  const docs = await splitter.createDocuments([labeled], [metadata]);
   await store.addDocuments(
     docs.map(
       (doc) =>
@@ -102,23 +105,242 @@ export async function addTextDocument(
         }),
     ),
   );
-  return getChunkCount();
+  return docs.length;
+}
+
+function hashText(text: string) {
+  return createHash("sha256").update(normalizeText(text)).digest("hex");
+}
+
+function normalizeText(text: string) {
+  return text.replace(/\r\n/g, "\n").trim();
+}
+
+function uploadMatchesText(
+  source: string,
+  text: string,
+  docs: Array<{ pageContent: string }>,
+) {
+  const normalized = normalizeText(text);
+  const labeled = normalizeText(`Source file: ${source}\n\n${text}`);
+  return docs.some((doc) => {
+    const content = normalizeText(doc.pageContent);
+    return (
+      content === normalized ||
+      content === labeled ||
+      content.includes(normalized)
+    );
+  });
+}
+
+async function writeCanonicalUpload(safeName: string, text: string) {
+  await fs.writeFile(path.join(UPLOAD_DIR, safeName), text, "utf8");
+}
+
+async function collapseTimestampedUploads() {
+  const files = await fs.readdir(UPLOAD_DIR);
+  const stamped = /^(\d{10,})-(.+\.txt)$/i;
+  for (const file of files) {
+    const match = file.match(stamped);
+    if (!match) continue;
+    const from = path.join(UPLOAD_DIR, file);
+    const dest = path.join(UPLOAD_DIR, match[2]);
+    try {
+      await fs.access(dest);
+      await fs.unlink(from);
+    } catch {
+      await fs.rename(from, dest);
+    }
+  }
+}
+
+async function deletePoints(ids: Array<string | number>) {
+  if (ids.length === 0) return;
+  const { collectionName } = qdrantOptions();
+  await getClient().delete(collectionName, {
+    wait: true,
+    points: ids,
+  });
+}
+
+async function deleteUploadSource(source: string) {
+  const ids: Array<string | number> = [];
+  for (const point of await scrollPoints()) {
+    const doc = payloadToDoc(point);
+    if (!doc) continue;
+    const sameSource =
+      String(doc.metadata.source ?? "").toLowerCase() === source.toLowerCase();
+    const origin = String(doc.metadata.origin ?? "");
+    if (sameSource && origin === "upload") {
+      ids.push(point.id);
+    }
+  }
+  await deletePoints(ids);
+}
+
+export async function reconcileUploads() {
+  await fs.mkdir(UPLOAD_DIR, { recursive: true });
+  await collapseTimestampedUploads();
+  if (!(await collectionExists())) return;
+
+  const groups = new Map<string, { id: string | number; origin: string }[]>();
+  for (const point of await scrollPoints()) {
+    const doc = payloadToDoc(point);
+    if (!doc) continue;
+    const source = String(doc.metadata.source ?? "").toLowerCase();
+    if (!source) continue;
+    const key = `${source}::${normalizeText(doc.pageContent)}`;
+    const list = groups.get(key) ?? [];
+    list.push({ id: point.id, origin: String(doc.metadata.origin ?? "") });
+    groups.set(key, list);
+  }
+
+  const extraIds: Array<string | number> = [];
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    list.sort((a, b) => Number(b.origin === "sample") - Number(a.origin === "sample"));
+    extraIds.push(...list.slice(1).map((item) => item.id));
+  }
+  await deletePoints(extraIds);
 }
 
 export async function saveUpload(filename: string, text: string) {
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
   const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const dest = path.join(UPLOAD_DIR, `${Date.now()}-${safeName}`);
-  await fs.writeFile(dest, text, "utf8");
+  await writeCanonicalUpload(safeName, text);
+  await reconcileUploads();
+
+  const existing = await retrieveBySources([safeName]);
+  if (existing.length > 0 && uploadMatchesText(safeName, text, existing)) {
+    return { filename: safeName, chunks: existing.length, reused: true };
+  }
+
+  await deleteUploadSource(safeName);
   const chunks = await addTextDocument(text, {
     source: safeName,
     origin: "upload",
+    contentHash: hashText(text),
   });
-  return { filename: safeName, chunks };
+  return { filename: safeName, chunks, reused: false };
 }
 
-export async function retrieveDocuments(query: string, k = 4) {
+export function normalizeSourceName(value: string) {
+  return value.toLowerCase().replace(/\.txt$/i, "").replace(/[^a-z0-9]/g, "");
+}
+
+export function matchSources(question: string, sources: string[]): string[] {
+  const mentions = question.match(/[a-zA-Z0-9._-]+\.txt/gi) ?? [];
+  const tokens = [question, ...mentions]
+    .map(normalizeSourceName)
+    .filter((token) => token.length >= 5);
+
+  return sources.filter((source) => {
+    const compact = normalizeSourceName(source);
+    if (compact.length < 4) return false;
+    return tokens.some((token) => token.includes(compact) || compact.includes(token));
+  });
+}
+
+function payloadToDoc(point: { payload?: Record<string, unknown> | null }) {
+  const payload = point.payload;
+  if (!payload) return null;
+  const content = typeof payload.content === "string" ? payload.content : "";
+  if (!content.trim()) return null;
+  const metadata =
+    payload.metadata && typeof payload.metadata === "object"
+      ? (payload.metadata as Record<string, unknown>)
+      : {};
+  return { pageContent: content, metadata };
+}
+
+function docKey(doc: { pageContent: string; metadata: Record<string, unknown> }) {
+  return `${String(doc.metadata.source ?? "")}::${doc.pageContent}`;
+}
+
+function dedupeDocs<T extends { pageContent: string; metadata: Record<string, unknown> }>(
+  docs: T[],
+) {
+  const seen = new Set<string>();
+  const unique: T[] = [];
+  for (const doc of docs) {
+    const key = docKey(doc);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(doc);
+  }
+  return unique;
+}
+
+async function scrollPoints() {
+  const client = getClient();
+  const { collectionName } = qdrantOptions();
+  const points: Array<{
+    id: string | number;
+    payload?: Record<string, unknown> | null;
+  }> = [];
+  let offset: unknown;
+  for (let page = 0; page < 20; page += 1) {
+    const result = await client.scroll(collectionName, {
+      limit: 100,
+      offset: offset as never,
+      with_payload: true,
+      with_vector: false,
+    });
+    points.push(
+      ...result.points.map((point) => ({
+        id: point.id as string | number,
+        payload: (point.payload ?? null) as Record<string, unknown> | null,
+      })),
+    );
+    if (result.next_page_offset == null) break;
+    offset = result.next_page_offset;
+  }
+  return points;
+}
+
+export async function listIndexedSources() {
+  if (!(await collectionExists())) return [];
+  const sources = new Set<string>();
+  for (const point of await scrollPoints()) {
+    const source = payloadToDoc(point)?.metadata.source;
+    if (typeof source === "string" && source.trim()) {
+      sources.add(source);
+    }
+  }
+  return [...sources];
+}
+
+export async function retrieveBySources(sources: string[]) {
+  const wanted = new Set(sources.map((source) => source.toLowerCase()));
+  const docs = [];
+  for (const point of await scrollPoints()) {
+    const doc = payloadToDoc(point);
+    if (!doc) continue;
+    if (wanted.has(String(doc.metadata.source ?? "").toLowerCase())) {
+      docs.push(doc);
+    }
+  }
+  return dedupeDocs(docs);
+}
+
+export async function retrieveDocuments(
+  query: string,
+  k = 4,
+  originalQuestion?: string,
+) {
   const store = await getVectorStore();
+  const asked = originalQuestion?.trim() || query;
+  const namedSources = matchSources(
+    `${asked}\n${query}`,
+    await listIndexedSources(),
+  );
+  if (namedSources.length > 0) {
+    const named = await retrieveBySources(namedSources);
+    if (named.length > 0) {
+      return named;
+    }
+  }
+
   const results = await store.similaritySearch(query, k);
   return results.map((doc) => ({
     pageContent: doc.pageContent,

@@ -29,7 +29,7 @@ The classify **node** is named `classify` because LangGraph will not allow a nod
 
 | Type | When | Pipeline |
 | --- | --- | --- |
-| **Index** | Answer is in uploaded / sample documents | retrieve → grade → (rewrite once) → generate |
+| **Index** | Answer is in uploaded / sample documents | retrieve (filename first, else similarity) → grade → (rewrite once) → generate. Mixed file + live questions keep file chunks and also web-search. |
 | **General** | Greeting, math, common knowledge | `generalLlm` only |
 | **Search** | Live / current-world facts | Tavily → generate |
 
@@ -69,7 +69,7 @@ Full session history and Qdrant chunk count.
 | Chat | MongoDB `messages` | Yes (same `sessionId` in `localStorage`) | Yes |
 | Session metadata | MongoDB `sessions` | Yes | Yes |
 | Vectors | Qdrant collection | Yes | Yes |
-| Raw uploads | `data/uploads/` | Yes | Yes |
+| Raw uploads | `data/uploads/{filename}` (one file per name) | Yes | Yes |
 
 ## Key files
 

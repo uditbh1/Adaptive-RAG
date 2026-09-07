@@ -26,13 +26,13 @@ A single chat model either invents sources or always retrieves documents, even w
 | ID | Requirement |
 | --- | --- |
 | FR-1 | Classify each question as `index`, `search`, or `general` using structured output. |
-| FR-2 | `index` retrieves top-k chunks from Qdrant. |
-| FR-3 | A grade node marks retrieved chunks relevant or not. |
+| FR-2 | `index` retrieves Qdrant chunks. If the question names an uploaded `.txt`, those chunks are used first. |
+| FR-3 | A grade node marks retrieved chunks relevant or not. A named-file hit is relevant even if the question also asks for live web facts. |
 | FR-4 | If not relevant and `rewriteCount < 1`, rewrite the question and retrieve again. |
-| FR-5 | If still not relevant, fall back to web search, then generate. |
+| FR-5 | If still not relevant, fall back to web search, then generate. Web search keeps earlier file chunks. Mixed file + live questions also search after a relevant retrieve. |
 | FR-6 | `search` calls Tavily and then generate. |
 | FR-7 | `general` answers with the chat model only. |
-| FR-8 | Accept `.txt` uploads; split at about 1000 characters with 150 overlap; persist in Qdrant. |
+| FR-8 | Accept `.txt` uploads; split at about 1000 characters with 150 overlap; persist in Qdrant. Same filename overwrites the previous copy; identical content is not indexed again. |
 | FR-9 | If the Qdrant collection is empty, seed from `data/sample/azure-ai.txt`. |
 | FR-10 | Query API returns `{ answer, route, trace }`. |
 | FR-11 | UI shows the three pipelines, upload, chat, and path chips. |

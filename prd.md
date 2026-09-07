@@ -61,7 +61,8 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 
 | User intent | Product path |
 | --- | --- |
-| Question about uploaded or sample docs | `index` → retrieve → grade → (rewrite once if needed) → generate or web fallback |
+| Question about uploaded or sample docs | `index` → retrieve (named file first) → grade → (rewrite once if needed) → generate or web fallback |
+| File question plus a live fact | `index` → retrieve named file → keep those chunks → web search → generate |
 | Live / current-world fact | `search` → Tavily → generate |
 | Greeting, small talk, simple math | `general` → model only |
 

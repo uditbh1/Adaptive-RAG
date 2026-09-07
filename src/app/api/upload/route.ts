@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       ok: true,
       filename: result.filename,
       chunks: result.chunks,
+      reused: result.reused,
     });
   } catch (error) {
     const message =

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TavilySearch } from "@langchain/tavily";
 import { getChatModel } from "../llm";
-import { retrieveDocuments } from "../rag/store";
+import { matchSources, retrieveDocuments } from "../rag/store";
 import type { GraphStateType, RetrievedDoc, Route } from "./state";
 
 const routeSchema = z.object({
@@ -29,8 +29,25 @@ function formatDocs(docs: RetrievedDoc[]) {
     return "(no documents)";
   }
   return docs
-    .map((doc, i) => `[${i + 1}] ${doc.pageContent}`)
+    .map((doc, i) => {
+      const source = String(doc.metadata.source ?? "unknown");
+      return `[${i + 1}] (${source})\n${doc.pageContent}`;
+    })
     .join("\n\n");
+}
+
+function needsLiveWeb(question: string) {
+  return /\b(weather|temperature|forecast|who won|headline|news|price|stock|today|tonight|this week|latest)\b/i.test(
+    question,
+  );
+}
+
+function keepIndexedDocs(docs: RetrievedDoc[]) {
+  return docs.filter((doc) => {
+    const origin = String(doc.metadata.origin ?? "");
+    const source = String(doc.metadata.source ?? "");
+    return origin === "upload" || origin === "sample" || source.toLowerCase().endsWith(".txt");
+  });
 }
 
 function formatHistoryBlock(history: string) {
@@ -65,7 +82,11 @@ Use the conversation history to resolve short follow-ups like "what about hybrid
 }
 
 export async function retrieveNode(state: GraphStateType) {
-  const documents = await retrieveDocuments(state.question, 4);
+  const documents = await retrieveDocuments(
+    state.question,
+    4,
+    state.originalQuestion,
+  );
   return {
     documents,
     trace: [`retrieve=${documents.length}`],
@@ -73,16 +94,32 @@ export async function retrieveNode(state: GraphStateType) {
 }
 
 export async function gradeNode(state: GraphStateType) {
+  const asked = state.originalQuestion || state.question;
+  const namedHit =
+    matchSources(
+      asked,
+      state.documents
+        .map((doc) => String(doc.metadata.source ?? ""))
+        .filter(Boolean),
+    ).length > 0;
+
+  if (namedHit) {
+    return {
+      relevant: true,
+      trace: ["grade=yes"],
+    };
+  }
+
   const llm = getChatModel().withStructuredOutput(gradeSchema);
   const result = await llm.invoke([
     {
       role: "system",
       content:
-        "Decide if the retrieved chunks are useful for answering the user question. If they are off-topic or empty, relevant=false.",
+        "Decide if the retrieved chunks are useful for any document-related part of the user question. Missing live-web facts such as weather or news do not make file chunks irrelevant. If the chunks are off-topic or empty, relevant=false.",
     },
     {
       role: "user",
-      content: `Question: ${state.question}\n\nChunks:\n${formatDocs(state.documents)}`,
+      content: `Question: ${asked}\n\nChunks:\n${formatDocs(state.documents)}`,
     },
   ]);
 
@@ -98,7 +135,7 @@ export async function rewriteNode(state: GraphStateType) {
     {
       role: "system",
       content:
-        "Rewrite the user question as a short retrieval query. Keep the same intent. Do not answer it.",
+        "Rewrite the user question as a short retrieval query for uploaded documents. If the question also asks for live web facts, keep only the document or file part. Do not answer it.",
     },
     { role: "user", content: state.question },
   ]);
@@ -112,8 +149,10 @@ export async function rewriteNode(state: GraphStateType) {
 
 export async function webSearchNode(state: GraphStateType) {
   if (!process.env.TAVILY_API_KEY) {
+    const kept = keepIndexedDocs(state.documents);
     return {
       documents: [
+        ...kept,
         {
           pageContent:
             "Web search is not configured. Set TAVILY_API_KEY in .env.local.",
@@ -130,10 +169,14 @@ export async function webSearchNode(state: GraphStateType) {
   });
   const raw = await tool.invoke({ query: state.question });
   const documents = normalizeTavily(raw);
+  const kept = keepIndexedDocs(state.documents);
 
   return {
-    documents,
-    trace: [`webSearch=${documents.length}`],
+    documents: [...kept, ...documents],
+    trace:
+      kept.length > 0
+        ? [`webSearch=${documents.length}`, `keptDocs=${kept.length}`]
+        : [`webSearch=${documents.length}`],
   };
 }
 
@@ -164,7 +207,7 @@ export async function generateNode(state: GraphStateType) {
     {
       role: "system",
       content:
-        "Answer using only the provided context. If the context is not enough, say you do not know. Mention sources when they appear in the context. Keep the answer short. Use conversation history only to resolve follow-ups.",
+        "Answer using the provided context. Use file chunks for questions about uploaded documents and web snippets for live facts. You may combine both in one answer. If a named file is in the context, summarise it. Only say you do not know when that part is missing from the context. Mention sources when they appear. Keep the answer short.",
     },
     {
       role: "user",
@@ -185,6 +228,8 @@ export function afterRoute(state: GraphStateType) {
 }
 
 export function afterGrade(state: GraphStateType) {
+  const asked = state.originalQuestion || state.question;
+  if (state.relevant && needsLiveWeb(asked)) return "webSearch";
   if (state.relevant) return "generate";
   if (state.rewriteCount < 1) return "rewrite";
   return "webSearch";
