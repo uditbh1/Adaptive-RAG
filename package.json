@@ -1,0 +1,36 @@
+{
+  "name": "adaptive-rag",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "eval": "tsx eval/run.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.0.0",
+    "@langchain/langgraph": "^1.0.0",
+    "@langchain/openai": "^1.0.0",
+    "@langchain/qdrant": "^1.0.3",
+    "@langchain/tavily": "^1.0.0",
+    "@langchain/textsplitters": "^1.0.0",
+    "@qdrant/js-client-rest": "^1.19.0",
+    "mongodb": "^7.6.0",
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "dotenv": "^16.6.0",
+    "eslint": "^9.32.0",
+    "eslint-config-next": "^15.5.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  }
+}

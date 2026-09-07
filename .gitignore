@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Env and secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Uploaded files and old local vector dump
+data/store.json
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Keep the sample knowledge base
+!data/sample/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.iml

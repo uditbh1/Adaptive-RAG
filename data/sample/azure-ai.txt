@@ -1,0 +1,70 @@
+Adaptive RAG knowledge base
+===========================
+
+This file is the indexed document for the Adaptive RAG TypeScript demo.
+Questions about these facts should be routed to the index (document) path.
+
+What Adaptive RAG is
+--------------------
+Adaptive RAG is a retrieval-augmented generation pattern that changes path
+based on the question. A router classifies each question as:
+- index: answer from uploaded documents
+- search: answer from live web search
+- general: answer from the language model alone (greetings, simple math,
+  common knowledge that does not need files or live news)
+
+This demo uses LangGraph.js in a Next.js app. It is not a full clone of the
+Python Adaptive-Rag repository. It skips login, MongoDB, Qdrant, Streamlit,
+PDF upload, and a ReAct agent.
+
+Rewrite budget
+--------------
+If the index path retrieves weak chunks, the system rewrites the question
+at most once. The rewrite budget is exactly one retry. After that failed
+grade, the graph falls back to web search. This budget exists to stop
+infinite retrieve-rewrite loops.
+
+Azure AI Search
+---------------
+Azure AI Search is Microsoft's retrieval service for applications. Vector
+search finds chunks by embedding similarity. Keyword (BM25) search finds
+chunks by exact terms. Hybrid search combines both: it runs vector search
+and keyword search, then fuses the rankings (often with Reciprocal Rank
+Fusion). Hybrid search is usually better than vector-only when users type
+product names, error codes, or rare identifiers.
+
+Azure OpenAI
+------------
+Azure OpenAI Service hosts OpenAI models (for example GPT-4o and
+text-embedding-3) inside an Azure subscription. Teams use it when they need
+Azure networking, regional data residency, and enterprise authentication
+instead of calling api.openai.com directly.
+
+Azure Document Intelligence
+---------------------------
+Azure Document Intelligence (formerly Form Recognizer) extracts structured
+fields from PDFs, invoices, IDs, and forms. It returns text, tables, and
+key-value pairs. It is an ingestion tool, not a chat model. In a RAG
+pipeline it often runs before chunking and embedding.
+
+Azure AI Content Safety
+-----------------------
+Azure AI Content Safety scores text and images for hate, sexual content,
+violence, and self-harm. Production RAG systems can run it on user input
+and on model output before showing an answer.
+
+Groundedness
+------------
+A grounded answer cites retrieved text. If a sentence is not supported by
+a chunk or a web snippet, this demo should say it does not know rather
+than invent a source. The grade node exists to block irrelevant chunks
+from reaching the generator.
+
+Demo facts you can ask about
+----------------------------
+- The product name of this project is Adaptive RAG TypeScript.
+- The orchestrator is LangGraph.js.
+- The rewrite budget is one.
+- Hybrid search in Azure AI Search mixes vector and keyword retrieval.
+- Document Intelligence extracts structure from documents; it does not
+  replace the chat model.

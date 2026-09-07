@@ -1,0 +1,52 @@
+[
+  {
+    "id": "index-rewrite-budget",
+    "question": "What rewrite budget does the Adaptive RAG demo use?",
+    "expectedRoute": "index"
+  },
+  {
+    "id": "index-hybrid-search",
+    "question": "What is Azure AI Search hybrid search?",
+    "expectedRoute": "index"
+  },
+  {
+    "id": "index-doc-intelligence",
+    "question": "What does Azure Document Intelligence do in a RAG pipeline?",
+    "expectedRoute": "index"
+  },
+  {
+    "id": "index-orchestrator",
+    "question": "Which orchestrator does this TypeScript Adaptive RAG project use?",
+    "expectedRoute": "index"
+  },
+  {
+    "id": "index-content-safety",
+    "question": "What does Azure AI Content Safety score?",
+    "expectedRoute": "index"
+  },
+  {
+    "id": "search-champions-league",
+    "question": "Who won the most recent UEFA Champions League final?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-weather-london",
+    "question": "What is today's weather in London?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "search-headline",
+    "question": "What is a top world news headline from today?",
+    "expectedRoute": "search"
+  },
+  {
+    "id": "general-hello",
+    "question": "Hello, how are you?",
+    "expectedRoute": "general"
+  },
+  {
+    "id": "general-math",
+    "question": "What is 2 + 2?",
+    "expectedRoute": "general"
+  }
+]

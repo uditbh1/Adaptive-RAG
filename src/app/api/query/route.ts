@@ -1,0 +1,72 @@
+import { NextResponse } from "next/server";
+import { runAdaptiveRag } from "@/lib/graph";
+import { appendTurn, ensureSession, formatHistory, getSession } from "@/lib/memory/sessions";
+import { getChunkCount, getVectorStore } from "@/lib/rag/store";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function serviceError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Unexpected server error";
+  return NextResponse.json({ error: message }, { status: 503 });
+}
+
+export async function POST(request: Request) {
+  const body = (await request.json()) as {
+    query?: string;
+    sessionId?: string;
+  };
+
+  const query = body.query?.trim();
+  const sessionId = body.sessionId?.trim() || "demo";
+
+  if (!query) {
+    return NextResponse.json({ error: "query is required" }, { status: 400 });
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      { error: "Set OPENAI_API_KEY in .env.local" },
+      { status: 500 },
+    );
+  }
+
+  try {
+    await getVectorStore();
+    await ensureSession(sessionId);
+    const history = await formatHistory(sessionId);
+    await appendTurn(sessionId, { role: "user", content: query });
+
+    const result = await runAdaptiveRag(query, history);
+    const turns = await appendTurn(sessionId, {
+      role: "assistant",
+      content: result.answer,
+      route: result.route,
+      trace: result.trace,
+    });
+
+    return NextResponse.json({
+      answer: result.answer,
+      route: result.route,
+      trace: result.trace,
+      rewriteCount: result.rewriteCount,
+      chunksIndexed: await getChunkCount(),
+      history: turns,
+    });
+  } catch (error) {
+    return serviceError(error);
+  }
+}
+
+export async function GET(request: Request) {
+  const sessionId = new URL(request.url).searchParams.get("sessionId") || "demo";
+  try {
+    await ensureSession(sessionId);
+    return NextResponse.json({
+      history: await getSession(sessionId),
+      chunksIndexed: await getChunkCount(),
+    });
+  } catch (error) {
+    return serviceError(error);
+  }
+}
