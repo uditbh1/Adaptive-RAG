@@ -2,18 +2,33 @@
 
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, CircleAlert, FileUp, Menu, MessageSquarePlus, PanelLeft, Send, Sparkles } from "lucide-react";
+import { CheckCircle2, CircleAlert, FileUp, Menu, MessageSquarePlus, PanelLeft, Send, Sparkles, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+type HopMetric = {
+  name: string;
+  ms: number;
+  tokens?: number;
+};
+
 type Message = {
   role: "user" | "assistant";
   content: string;
   route?: string;
   trace?: string[];
+  sources?: string[];
+  metrics?: HopMetric[];
+};
+
+type IndexedFile = {
+  filename: string;
+  origin: string;
+  chunks: number;
+  canDelete: boolean;
 };
 
 type Conversation = {
@@ -56,6 +71,16 @@ function formatWhen(value: string) {
   });
 }
 
+function formatMetrics(metrics?: HopMetric[]) {
+  if (!metrics?.length) return "";
+  const ms = metrics.reduce((sum, hop) => sum + hop.ms, 0);
+  const tokens = metrics.reduce((sum, hop) => sum + (hop.tokens ?? 0), 0);
+  const hops = metrics
+    .map((hop) => `${hop.name} ${hop.ms}ms${hop.tokens ? `/${hop.tokens}tok` : ""}`)
+    .join(" · ");
+  return tokens > 0 ? `${ms}ms · ${tokens} tok · ${hops}` : `${ms}ms · ${hops}`;
+}
+
 function chipTone(step: string) {
   if (step.includes("search") || step.startsWith("webSearch")) {
     return "bg-sky-400/20 text-sky-200";
@@ -71,6 +96,7 @@ export default function HomePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
   const [question, setQuestion] = useState("");
   const [status, setStatus] = useState("Connecting…");
   const [busy, setBusy] = useState(false);
@@ -89,6 +115,18 @@ export default function HomePage() {
     setToast({ kind, text });
     toastTimer.current = window.setTimeout(() => setToast(null), 4500);
   }
+
+  const loadIndexedFiles = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sources");
+      const data = (await res.json()) as { files?: IndexedFile[] };
+      if (Array.isArray(data.files)) {
+        setIndexedFiles(data.files);
+      }
+    } catch {
+      // keep last list
+    }
+  }, []);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -113,7 +151,8 @@ export default function HomePage() {
 
   useEffect(() => {
     void loadConversations();
-  }, [loadConversations]);
+    void loadIndexedFiles();
+  }, [loadConversations, loadIndexedFiles]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -157,6 +196,32 @@ export default function HomePage() {
     setQuestion("");
   }
 
+  async function onDeleteFile(filename: string) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/sources", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename }),
+      });
+      const data = (await res.json()) as { error?: string; files?: IndexedFile[] };
+      if (!res.ok) {
+        showToast("error", data.error ?? "Could not remove the file.");
+        return;
+      }
+      if (Array.isArray(data.files)) {
+        setIndexedFiles(data.files);
+      } else {
+        await loadIndexedFiles();
+      }
+      showToast("success", `${filename} was removed from the index.`);
+    } catch {
+      showToast("error", "Could not remove the file.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function startNewConversation() {
     const id = crypto.randomUUID();
     window.localStorage.setItem(SESSION_KEY, id);
@@ -198,6 +263,7 @@ export default function HomePage() {
           ? `${name} was already indexed. Using the existing copy.`
           : `${name} was indexed (${chunks} chunks).`,
       );
+      await loadIndexedFiles();
     } catch {
       setStatus("Upload failed");
       showToast("error", "Could not index the file. Is Qdrant running?");
@@ -225,6 +291,8 @@ export default function HomePage() {
         route?: string;
         trace?: string[];
         chunksIndexed?: number;
+        sources?: string[];
+        metrics?: HopMetric[];
       };
       if (!res.ok) {
         setStatus(data.error ?? "Query failed");
@@ -241,6 +309,8 @@ export default function HomePage() {
           content: data.answer ?? "",
           route: data.route,
           trace: data.trace,
+          sources: data.sources,
+          metrics: data.metrics,
         },
       ]);
       setStatus(
@@ -294,6 +364,9 @@ export default function HomePage() {
               </Button>
             </div>
             <ScrollArea className="flex-1 px-2 pb-4">
+              <p className="px-2 pb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                Chats
+              </p>
               {conversations.length === 0 ? (
                 <p className="px-2 text-xs text-muted-foreground">
                   Send a message and it will show up here.
@@ -319,6 +392,42 @@ export default function HomePage() {
                           {item.updatedAt ? ` · ${formatWhen(item.updatedAt)}` : ""}
                         </span>
                       </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-5 px-2 pb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                Indexed files
+              </p>
+              {indexedFiles.length === 0 ? (
+                <p className="px-2 text-xs text-muted-foreground">
+                  Upload a .txt to add it here.
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {indexedFiles.map((file) => (
+                    <li
+                      key={`${file.origin}-${file.filename}`}
+                      className="flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-foreground">{file.filename}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {file.origin} · {file.chunks} chunks
+                        </p>
+                      </div>
+                      {file.canDelete ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="iconSm"
+                          disabled={busy}
+                          aria-label={`Remove ${file.filename}`}
+                          onClick={() => void onDeleteFile(file.filename)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -424,6 +533,18 @@ export default function HomePage() {
                             </Badge>
                           ) : null}
                           <div className="whitespace-pre-wrap">{message.content}</div>
+                          {message.sources && message.sources.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {message.sources.map((source) => (
+                                <span
+                                  key={source}
+                                  className="rounded-full bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                                >
+                                  {source}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
                           {message.trace && message.trace.length > 0 ? (
                             <div className="mt-2 flex flex-wrap gap-1 font-mono text-[10px]">
                               {message.trace.map((step, stepIndex) => (
@@ -435,6 +556,11 @@ export default function HomePage() {
                                 </span>
                               ))}
                             </div>
+                          ) : null}
+                          {formatMetrics(message.metrics) ? (
+                            <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+                              {formatMetrics(message.metrics)}
+                            </p>
                           ) : null}
                         </div>
                       </motion.article>

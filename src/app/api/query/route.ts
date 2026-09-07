@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runAdaptiveRag } from "@/lib/graph";
+import { hasLlmCredentials } from "@/lib/llm";
 import { appendTurn, formatHistory, getSession } from "@/lib/memory/sessions";
 import { getChunkCount, getVectorStore } from "@/lib/rag/store";
 
@@ -24,9 +25,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "query is required" }, { status: 400 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!hasLlmCredentials()) {
     return NextResponse.json(
-      { error: "Set OPENAI_API_KEY in .env.local" },
+      {
+        error:
+          "Set OPENAI_API_KEY or Azure OpenAI variables in .env.local (see .env.example).",
+      },
       { status: 500 },
     );
   }
@@ -42,12 +46,16 @@ export async function POST(request: Request) {
       content: result.answer,
       route: result.route,
       trace: result.trace,
+      sources: result.sources,
+      metrics: result.metrics,
     });
 
     return NextResponse.json({
       answer: result.answer,
       route: result.route,
       trace: result.trace,
+      sources: result.sources,
+      metrics: result.metrics,
       rewriteCount: result.rewriteCount,
       chunksIndexed: await getChunkCount(),
       history: turns,

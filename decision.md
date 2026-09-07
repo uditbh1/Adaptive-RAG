@@ -1,44 +1,10 @@
 # Decision log
 
-Living log of choices made while building Adaptive RAG. **Do not delete old entries.** Change `Status` and add a new entry that supersedes the old one.
+I keep architecture choices here so I do not lose the why. Old entries stay. If I change my mind I mark the old one superseded and add a new ID.
 
-| Field | Value |
-| --- | --- |
-| Canonical file | this file (`decision.md`) |
-| Product spec | [prd.md](prd.md) |
-| Stack snapshot | [tech-stack.md](tech-stack.md) |
-| Graph detail | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+Product: [prd.md](prd.md). Stack: [tech-stack.md](tech-stack.md). Graph: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). [`docs/DECISIONS.md`](docs/DECISIONS.md) only points here.
 
-Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md) only points here so we do not keep two lists.
-
----
-
-## How to update this file
-
-1. Add a row to the **Index** (next ID: `D-018`).
-2. Paste the template at the **top of the Entries section** (newest first).
-3. If this replaces an older call, set that entry to `Superseded` and link the new ID.
-4. If the choice changes product scope or libraries, also edit `prd.md` and/or `tech-stack.md`.
-
-```md
-### D-XXX: Short title
-
-| | |
-| --- | --- |
-| Date | YYYY-MM-DD |
-| Status | Accepted / Superseded by D-YYY / Rejected |
-| Area | product / graph / stack / eval / docs |
-
-**Context:** What forced a choice.
-
-**Options:** A vs B vs C.
-
-**Decision:** What we did.
-
-**Why:** One or two reasons.
-
-**Follow-up:** Files touched or next review trigger.
-```
+Next ID: **D-021**.
 
 ---
 
@@ -46,6 +12,9 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 
 | ID | Date | Status | Decision |
 | --- | --- | --- | --- |
+| D-020 | 2026-09-07 | Accepted | Optional Azure OpenAI client + CI for tsc and lint |
+| D-019 | 2026-09-07 | Accepted | Groundedness eval, citations, and hop metrics |
+| D-018 | 2026-09-07 | Accepted | Hybrid retrieve and sidebar file list/delete |
 | D-017 | 2026-09-07 | Accepted | Re-upload of the same `.txt` replaces, does not stack |
 | D-016 | 2026-09-07 | Accepted | Named-file retrieve + keep file chunks on web fallback |
 | D-001 | 2026-09-06 | Accepted | One Next.js TypeScript app, not FastAPI + Streamlit |
@@ -67,6 +36,54 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 ---
 
 ## Entries
+
+### D-020: Optional Azure OpenAI client + CI for tsc and lint
+
+| | |
+| --- | --- |
+| Date | 2026-09-07 |
+| Status | Accepted |
+| Area | stack |
+
+**Context:** I wanted Azure OpenAI as a switch, not a rewrite. I also wanted typecheck and lint on every push.
+
+**Decision:** `src/lib/llm.ts` uses `AzureChatOpenAI` / `AzureOpenAIEmbeddings` when Azure env vars are set; otherwise OpenAI. `.github/workflows/ci.yml` runs `tsc` and lint. Eval stays local because it needs model keys.
+
+**Why:** Same graph either way. CI does not spend API credits.
+
+---
+
+### D-019: Groundedness eval, citations, and hop metrics
+
+| | |
+| --- | --- |
+| Date | 2026-09-07 |
+| Status | Accepted |
+| Area | eval |
+
+**Context:** Router accuracy alone does not catch an index answer that ignores the chunks. I also could not see how expensive a hop was.
+
+**Decision:** `npm run eval` scores index claims against retrieved text. Generate attaches source names. Each node records elapsed ms (and tokens when the API returns them). The UI shows both.
+
+**Why:** I can say whether the answer is grounded and how long the path took.
+
+---
+
+### D-018: Hybrid retrieve and sidebar file list/delete
+
+| | |
+| --- | --- |
+| Date | 2026-09-07 |
+| Status | Accepted |
+| Area | graph |
+
+**Context:** Vector-only search missed short files and exact names. I also had no way to see or remove what was indexed.
+
+**Decision:** Default retrieve fuses Qdrant vector hits with a keyword scroll on `content` (RRF). Named `.txt` files still win. GET/DELETE `/api/sources` lists files and removes uploads.
+
+**Why:** Hybrid search matches how I describe Azure AI Search hybrid in the sample file. The sidebar is the index, not just a folder on disk.
+
+---
 
 ### D-017: Re-upload of the same `.txt` replaces, does not stack
 
@@ -162,7 +179,7 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 
 **Decision:** Add [`prd.md`](prd.md), [`tech-stack.md`](tech-stack.md), and this [`decision.md`](decision.md). Keep `docs/` for architecture, evaluation, and FR-IDs.
 
-**Why:** Hiring reviewers open the root first. A log that is updated as we build is more useful than a frozen ADR dump.
+**Why:** I want the product, stack, and decisions at the repo root. A log I update as I go is more useful than a frozen ADR dump.
 
 **Follow-up:** New product or stack choices must land here the same day.
 
@@ -176,7 +193,7 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 | Status | Accepted |
 | Area | product |
 
-**Context:** A first-run demo that requires a manual upload fails in interviews.
+**Context:** A first run that requires a manual upload is a weak demo.
 
 **Decision:** If `data/store.json` is empty, index [`data/sample/azure-ai.txt`](data/sample/azure-ai.txt) on first retrieve.
 
@@ -326,7 +343,7 @@ Older ADR write-ups were folded in here. [`docs/DECISIONS.md`](docs/DECISIONS.md
 
 **Decision:** Grade is read-only. At most one rewrite (`rewriteCount < 1`), then web search.
 
-**Why:** Bounded cost. Clear interview story: verification ≠ retrieval.
+**Why:** Bounded cost. Grade stays independent of search.
 
 **Follow-up:** Trace must never contain two `rewrite` hops. If you see that, it is a bug, not a new decision.
 

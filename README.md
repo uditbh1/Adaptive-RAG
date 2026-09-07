@@ -1,27 +1,33 @@
-# Adaptive RAG (TypeScript)
+# Adaptive RAG
 
-A Next.js Adaptive RAG app. A LangGraph.js graph **changes path** for each question: indexed documents, live web search, or the model alone. Weak document hits get **one rewrite**, then web search. The UI shows that path.
+Next.js app that routes each question through a LangGraph.js graph: indexed documents, live web search, or the model alone. Weak document hits get one rewrite, then web search. The UI shows the path, sources, and time per hop.
 
-This follows the Adaptive RAG idea from [dhruvsinghal09/Adaptive-Rag](https://github.com/dhruvsinghal09/Adaptive-Rag). It is not a full clone. Product spec: [prd.md](prd.md).
+Based on the Adaptive RAG idea from [dhruvsinghal09/Adaptive-Rag](https://github.com/dhruvsinghal09/Adaptive-Rag). Spec: [prd.md](prd.md).
 
-## How it works
+## Graph
 
+```mermaid
+flowchart TD
+  Q[question] --> C[classify]
+  C -->|index| R[retrieve hybrid]
+  C -->|search| W[web search]
+  C -->|general| G[model only]
+  R --> GR[grade]
+  GR -->|yes + live fact| W
+  GR -->|yes| GEN[generate]
+  GR -->|no + rewrite left| RW[rewrite]
+  RW --> R
+  GR -->|no + budget spent| W
+  W --> GEN
 ```
-question
-   -> route (index | search | general)
-        index  -> retrieve -> grade
-                    grade yes -> generate
-                    grade no + rewrite left -> rewrite -> retrieve
-                    grade no + no rewrite left -> web search -> generate
-        search -> web search -> generate
-        general -> LLM answer
-```
 
-Rewrite budget: **exactly one**. That stops an infinite retrieve loop.
+Rewrite budget is one. That stops an infinite retrieve loop.
+
+Retrieve is hybrid: Qdrant vector search plus keyword search, fused with reciprocal rank fusion. If the question names a `.txt` file, those chunks are used first.
 
 ## Setup
 
-1. Copy `.env.example` to `.env.local` and add `OPENAI_API_KEY` (and `TAVILY_API_KEY` for web search).
+1. Copy `.env.example` to `.env.local`. Set `OPENAI_API_KEY`, or the Azure OpenAI variables. Set `TAVILY_API_KEY` for web search.
 2. Start MongoDB and Qdrant:
 
 ```bash
@@ -35,7 +41,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The sample file `data/sample/azure-ai.txt` is indexed on the first question.
+Open [http://localhost:3000](http://localhost:3000). `data/sample/azure-ai.txt` is indexed on the first question.
 
 Try:
 
@@ -45,22 +51,37 @@ Try:
 
 ## Eval
 
-Ten fixed questions check that the router picked the expected path.
-
 ```bash
 npm run eval
 ```
 
-See [docs/EVALUATION.md](docs/EVALUATION.md).
+The runner checks:
 
-## Documentation
+- Router accuracy: expected `index` / `search` / `general` vs actual
+- Groundedness on index answers: each claim is checked against retrieved chunks
 
-| File | What it covers |
+Details: [docs/EVALUATION.md](docs/EVALUATION.md).
+
+## Commands
+
+```bash
+docker compose up -d
+npm run dev
+npm run eval
+npx tsc --noEmit
+npm run lint
+```
+
+CI runs `tsc` and lint on push and pull requests.
+
+## Docs
+
+| File | Contents |
 | --- | --- |
-| [prd.md](prd.md) | Product requirements (goals, journeys, metrics) |
-| [tech-stack.md](tech-stack.md) | Libraries, env, what we did not use |
-| [decision.md](decision.md) | Living log of decisions (append as you build) |
-| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | Engineering FR / NFR IDs |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Graph, APIs, data flow |
-| [docs/EVALUATION.md](docs/EVALUATION.md) | How we measure the router |
-| [AGENTS.md](AGENTS.md) | Short notes for coding agents |
+| [prd.md](prd.md) | Product requirements |
+| [tech-stack.md](tech-stack.md) | Libraries and env |
+| [decision.md](decision.md) | Why each stack and graph choice was made |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Graph, APIs, persistence |
+| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | FR / NFR IDs |
+| [docs/EVALUATION.md](docs/EVALUATION.md) | How eval works |
+| [AGENTS.md](AGENTS.md) | Short project notes |

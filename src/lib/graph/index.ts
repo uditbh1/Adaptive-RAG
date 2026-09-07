@@ -10,7 +10,7 @@ import {
   routeNode,
   webSearchNode,
 } from "./nodes";
-import { GraphState, type Route } from "./state";
+import { GraphState, type HopMetric, type RetrievedDoc, type Route } from "./state";
 
 const workflow = new StateGraph(GraphState)
   .addNode("classify", routeNode)
@@ -44,6 +44,9 @@ export type AdaptiveRagResult = {
   route: Route | "";
   trace: string[];
   rewriteCount: number;
+  sources: string[];
+  documents: RetrievedDoc[];
+  metrics: HopMetric[];
 };
 
 export async function runAdaptiveRag(
@@ -60,6 +63,8 @@ export async function runAdaptiveRag(
     relevant: false,
     answer: "",
     trace: [],
+    sources: [],
+    metrics: [],
   });
 
   return {
@@ -67,5 +72,8 @@ export async function runAdaptiveRag(
     route: state.route,
     trace: state.trace,
     rewriteCount: state.rewriteCount,
+    sources: state.sources,
+    documents: state.documents,
+    metrics: state.metrics,
   };
 }

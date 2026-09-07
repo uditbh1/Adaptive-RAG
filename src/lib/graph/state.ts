@@ -1,6 +1,8 @@
 import { Annotation } from "@langchain/langgraph";
+import type { HopMetric } from "./observe";
 
 export type Route = "index" | "search" | "general";
+export type { HopMetric };
 
 export type RetrievedDoc = {
   pageContent: string;
@@ -32,6 +34,14 @@ export const GraphState = Annotation.Root({
     default: () => "",
   }),
   trace: Annotation<string[]>({
+    reducer: (current, update) => current.concat(update),
+    default: () => [],
+  }),
+  sources: Annotation<string[]>({
+    reducer: (_current, update) => update,
+    default: () => [],
+  }),
+  metrics: Annotation<HopMetric[]>({
     reducer: (current, update) => current.concat(update),
     default: () => [],
   }),

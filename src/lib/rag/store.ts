@@ -42,17 +42,29 @@ async function collectionExists() {
   return collections.some((item) => item.name === collectionName);
 }
 
+async function ensureTextIndex() {
+  const { collectionName } = qdrantOptions();
+  try {
+    await getClient().createPayloadIndex(collectionName, {
+      wait: true,
+      field_name: "content",
+      field_schema: "text",
+    });
+  } catch {
+    // index already exists
+  }
+}
+
 async function ensureCollection() {
   const embeddings = getEmbeddings();
   const options = qdrantOptions();
-  if (await collectionExists()) {
-    return QdrantVectorStore.fromExistingCollection(embeddings, options);
+  if (!(await collectionExists())) {
+    const size = (await embeddings.embedQuery("dimension probe")).length;
+    await getClient().createCollection(options.collectionName, {
+      vectors: { size, distance: "Cosine" },
+    });
   }
-
-  const size = (await embeddings.embedQuery("dimension probe")).length;
-  await getClient().createCollection(options.collectionName, {
-    vectors: { size, distance: "Cosine" },
-  });
+  await ensureTextIndex();
   return QdrantVectorStore.fromExistingCollection(embeddings, options);
 }
 
@@ -323,6 +335,68 @@ export async function retrieveBySources(sources: string[]) {
   return dedupeDocs(docs);
 }
 
+async function keywordSearch(query: string, k: number) {
+  const words = [
+    ...new Set((query.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [])),
+  ].slice(0, 8);
+  if (words.length === 0) return [];
+
+  const { collectionName } = qdrantOptions();
+  try {
+    const result = await getClient().scroll(collectionName, {
+      limit: Math.max(k, 6),
+      with_payload: true,
+      with_vector: false,
+      filter: {
+        should: words.map((word) => ({
+          key: "content",
+          match: { text: word },
+        })),
+      },
+    });
+    return result.points
+      .map((point) => payloadToDoc(point))
+      .filter((doc): doc is NonNullable<typeof doc> => Boolean(doc));
+  } catch {
+    const docs = [];
+    for (const point of await scrollPoints()) {
+      const doc = payloadToDoc(point);
+      if (!doc) continue;
+      const haystack = doc.pageContent.toLowerCase();
+      if (words.some((word) => haystack.includes(word))) {
+        docs.push(doc);
+      }
+    }
+    return docs.slice(0, k);
+  }
+}
+
+function rrfFuse(
+  lists: Array<Array<{ pageContent: string; metadata: Record<string, unknown> }>>,
+  k: number,
+) {
+  const scores = new Map<
+    string,
+    { doc: { pageContent: string; metadata: Record<string, unknown> }; score: number }
+  >();
+  for (const list of lists) {
+    list.forEach((doc, rank) => {
+      const key = docKey(doc);
+      const add = 1 / (60 + rank + 1);
+      const current = scores.get(key);
+      if (current) {
+        current.score += add;
+      } else {
+        scores.set(key, { doc, score: add });
+      }
+    });
+  }
+  return [...scores.values()]
+    .sort((left, right) => right.score - left.score)
+    .slice(0, k)
+    .map((item) => item.doc);
+}
+
 export async function retrieveDocuments(
   query: string,
   k = 4,
@@ -341,9 +415,57 @@ export async function retrieveDocuments(
     }
   }
 
-  const results = await store.similaritySearch(query, k);
-  return results.map((doc) => ({
+  const [vectorHits, keywordHits] = await Promise.all([
+    store.similaritySearch(query, k),
+    keywordSearch(query, k),
+  ]);
+  const vectorDocs = vectorHits.map((doc) => ({
     pageContent: doc.pageContent,
     metadata: (doc.metadata ?? {}) as Record<string, unknown>,
   }));
+  return rrfFuse([vectorDocs, keywordHits], k);
+}
+
+export type IndexedFile = {
+  filename: string;
+  origin: string;
+  chunks: number;
+  canDelete: boolean;
+};
+
+export async function listIndexedFiles(): Promise<IndexedFile[]> {
+  if (!(await collectionExists())) return [];
+  const grouped = new Map<string, IndexedFile>();
+  for (const point of await scrollPoints()) {
+    const doc = payloadToDoc(point);
+    const filename = String(doc?.metadata.source ?? "").trim();
+    if (!filename) continue;
+    const origin = String(doc?.metadata.origin ?? "upload");
+    const key = `${origin}::${filename.toLowerCase()}`;
+    const current = grouped.get(key);
+    if (current) {
+      current.chunks += 1;
+    } else {
+      grouped.set(key, {
+        filename,
+        origin,
+        chunks: 1,
+        canDelete: origin === "upload",
+      });
+    }
+  }
+  return [...grouped.values()].sort((left, right) =>
+    left.filename.localeCompare(right.filename),
+  );
+}
+
+export async function deleteIndexedFile(filename: string) {
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+  await deleteUploadSource(safeName);
+  try {
+    await fs.unlink(path.join(UPLOAD_DIR, safeName));
+  } catch {
+    // disk copy may already be gone
+  }
+  return { filename: safeName };
 }
