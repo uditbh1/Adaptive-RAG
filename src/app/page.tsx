@@ -1,12 +1,19 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
   route?: string;
   trace?: string[];
+};
+
+type Conversation = {
+  sessionId: string;
+  title: string;
+  updatedAt: string;
+  messageCount: number;
 };
 
 const SESSION_KEY = "adaptive-rag-session";
@@ -31,13 +38,37 @@ function pipelineLabel(route?: string) {
   return null;
 }
 
+function formatWhen(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function HomePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [question, setQuestion] = useState("");
   const [status, setStatus] = useState("Connecting to session…");
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sessions");
+      const data = (await res.json()) as { sessions?: Conversation[]; error?: string };
+      if (Array.isArray(data.sessions)) {
+        setConversations(data.sessions);
+      }
+    } catch {
+      // Query load will surface Mongo errors.
+    }
+  }, []);
 
   useEffect(() => {
     const existing = window.localStorage.getItem(SESSION_KEY);
@@ -47,6 +78,10 @@ export default function HomePage() {
     }
     setSessionId(id);
   }, []);
+
+  useEffect(() => {
+    void loadConversations();
+  }, [loadConversations]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -62,7 +97,7 @@ export default function HomePage() {
         }
         if (typeof data.chunksIndexed === "number") {
           setStatus(
-            `${data.chunksIndexed} chunks in Qdrant. Chat is saved in MongoDB for this session.`,
+            `${data.chunksIndexed} chunks in Qdrant. Previous chats stay in History.`,
           );
         }
       })
@@ -74,12 +109,19 @@ export default function HomePage() {
     [sessionId, question, busy],
   );
 
+  function openConversation(id: string) {
+    window.localStorage.setItem(SESSION_KEY, id);
+    setSessionId(id);
+    setQuestion("");
+  }
+
   function startNewConversation() {
     const id = crypto.randomUUID();
     window.localStorage.setItem(SESSION_KEY, id);
     setSessionId(id);
     setMessages([]);
-    setStatus("New session. History starts empty; indexed documents stay in Qdrant.");
+    setQuestion("");
+    setStatus("New conversation. Older chats remain in History.");
   }
 
   async function onUpload(event: FormEvent) {
@@ -149,6 +191,7 @@ export default function HomePage() {
       setStatus(
         `Pipeline: ${pipeline}. Chunks in Qdrant: ${data.chunksIndexed ?? "?"}.`,
       );
+      await loadConversations();
     } catch {
       setStatus("Query failed.");
     } finally {
@@ -157,97 +200,131 @@ export default function HomePage() {
   }
 
   return (
-    <main className="app">
-      <header className="header">
-        <h1>Adaptive RAG</h1>
-        <p>
-          Intelligent query routing classifies each question into one pipeline.
-          Index uses your documents in Qdrant. Search uses the live web. General
-          uses the model only. Chat history is stored in MongoDB and survives refresh.
-        </p>
-      </header>
-
-      <section className="pipelines" aria-label="Query types">
-        <article>
-          <h3>Index</h3>
-          <p>Answerable from uploaded documents in Qdrant.</p>
-        </article>
-        <article>
-          <h3>General</h3>
-          <p>Answerable from general knowledge. No retrieval.</p>
-        </article>
-        <article>
-          <h3>Search</h3>
-          <p>Needs real-time web search.</p>
-        </article>
-      </section>
-
-      <section className="panel">
-        <h2>Upload a .txt file</h2>
-        <form className="upload-row" onSubmit={onUpload}>
-          <input
-            type="file"
-            accept=".txt,text/plain"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
-          <button type="submit" disabled={busy}>
-            Index file
+    <div className="shell">
+      <aside className="history" aria-label="Conversation history">
+        <div className="history-head">
+          <h2>History</h2>
+          <button type="button" className="secondary" onClick={startNewConversation} disabled={busy}>
+            New
           </button>
-        </form>
-        <p className="status">{status}</p>
-      </section>
-
-      <section className="panel">
-        <h2>Ask</h2>
-        <form onSubmit={onAsk}>
-          <textarea
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Try: What rewrite budget does this Adaptive RAG demo use?"
-          />
-          <div className="ask-row" style={{ marginTop: 10 }}>
-            <button type="submit" disabled={!canAsk}>
-              {busy ? "Running graph…" : "Run Adaptive RAG"}
-            </button>
-            <button type="button" className="secondary" onClick={startNewConversation} disabled={busy}>
-              New conversation
-            </button>
-          </div>
-        </form>
-
-        <div className="messages">
-          {messages.length === 0 ? (
-            <p className="empty">
-              No turns yet. Refresh keeps this session. The sample knowledge base
-              is indexed into Qdrant on first use.
-            </p>
-          ) : (
-            messages.map((message, index) => {
-              const pipeline = pipelineLabel(message.route);
-              return (
-                <article key={`${message.role}-${index}`} className={`bubble ${message.role}`}>
-                  <div className="who">
-                    {message.role}
-                    {pipeline ? (
-                      <span className={`pipeline-tag ${message.route}`}>{pipeline}</span>
-                    ) : null}
-                  </div>
-                  <div className="answer">{message.content}</div>
-                  {message.trace && message.trace.length > 0 ? (
-                    <div className="trace" aria-label="graph path">
-                      {message.trace.map((step, stepIndex) => (
-                        <span key={`${step}-${stepIndex}`} className={chipClass(step)}>
-                          {step}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                </article>
-              );
-            })
-          )}
         </div>
-      </section>
-    </main>
+        {conversations.length === 0 ? (
+          <p className="empty">No saved chats yet. Send a message, then they appear here.</p>
+        ) : (
+          <ul className="history-list">
+            {conversations.map((item) => (
+              <li key={item.sessionId}>
+                <button
+                  type="button"
+                  className={item.sessionId === sessionId ? "history-item active" : "history-item"}
+                  onClick={() => openConversation(item.sessionId)}
+                  disabled={busy}
+                >
+                  <span className="history-title">{item.title}</span>
+                  <span className="history-meta">
+                    {item.messageCount} messages
+                    {item.updatedAt ? ` · ${formatWhen(item.updatedAt)}` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
+
+      <main className="app">
+        <header className="header">
+          <h1>Adaptive RAG</h1>
+          <p>
+            Intelligent query routing classifies each question into one pipeline.
+            Index uses your documents in Qdrant. Search uses the live web. General
+            uses the model only. Chats are stored in MongoDB. Use History to reopen
+            an earlier conversation.
+          </p>
+        </header>
+
+        <section className="pipelines" aria-label="Query types">
+          <article>
+            <h3>Index</h3>
+            <p>Answerable from uploaded documents in Qdrant.</p>
+          </article>
+          <article>
+            <h3>General</h3>
+            <p>Answerable from general knowledge. No retrieval.</p>
+          </article>
+          <article>
+            <h3>Search</h3>
+            <p>Needs real-time web search.</p>
+          </article>
+        </section>
+
+        <section className="panel">
+          <h2>Upload a .txt file</h2>
+          <form className="upload-row" onSubmit={onUpload}>
+            <input
+              type="file"
+              accept=".txt,text/plain"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            />
+            <button type="submit" disabled={busy}>
+              Index file
+            </button>
+          </form>
+          <p className="status">{status}</p>
+        </section>
+
+        <section className="panel">
+          <h2>Ask</h2>
+          <form onSubmit={onAsk}>
+            <textarea
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder="Try: What rewrite budget does this Adaptive RAG demo use?"
+            />
+            <div className="ask-row" style={{ marginTop: 10 }}>
+              <button type="submit" disabled={!canAsk}>
+                {busy ? "Running graph…" : "Run Adaptive RAG"}
+              </button>
+              <button type="button" className="secondary" onClick={startNewConversation} disabled={busy}>
+                New conversation
+              </button>
+            </div>
+          </form>
+
+          <div className="messages">
+            {messages.length === 0 ? (
+              <p className="empty">
+                No turns in this conversation yet. Click a chat in History to reopen
+                an older one.
+              </p>
+            ) : (
+              messages.map((message, index) => {
+                const pipeline = pipelineLabel(message.route);
+                return (
+                  <article key={`${message.role}-${index}`} className={`bubble ${message.role}`}>
+                    <div className="who">
+                      {message.role}
+                      {pipeline ? (
+                        <span className={`pipeline-tag ${message.route}`}>{pipeline}</span>
+                      ) : null}
+                    </div>
+                    <div className="answer">{message.content}</div>
+                    {message.trace && message.trace.length > 0 ? (
+                      <div className="trace" aria-label="graph path">
+                        {message.trace.map((step, stepIndex) => (
+                          <span key={`${step}-${stepIndex}`} className={chipClass(step)}>
+                            {step}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

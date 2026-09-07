@@ -45,6 +45,13 @@ export async function getSession(sessionId: string): Promise<ChatTurn[]> {
   }));
 }
 
+export type ConversationSummary = {
+  sessionId: string;
+  title: string;
+  updatedAt: Date;
+  messageCount: number;
+};
+
 export async function appendTurn(sessionId: string, turn: ChatTurn) {
   const db = await getMongoDb();
   await ensureSession(sessionId);
@@ -56,11 +63,52 @@ export async function appendTurn(sessionId: string, turn: ChatTurn) {
     trace: turn.trace,
     createdAt: new Date(),
   });
-  await db.collection("sessions").updateOne(
-    { sessionId },
-    { $set: { updatedAt: new Date() } },
-  );
+
+  const sessionUpdate: { updatedAt: Date; title?: string } = {
+    updatedAt: new Date(),
+  };
+  if (turn.role === "user") {
+    const existing = await db.collection("sessions").findOne({ sessionId });
+    if (!existing?.title) {
+      sessionUpdate.title = turn.content.trim().slice(0, 80) || "Conversation";
+    }
+  }
+
+  await db.collection("sessions").updateOne({ sessionId }, { $set: sessionUpdate });
   return getSession(sessionId);
+}
+
+export async function listConversations(): Promise<ConversationSummary[]> {
+  const db = await getMongoDb();
+  const sessions = await db
+    .collection("sessions")
+    .find({})
+    .sort({ updatedAt: -1 })
+    .limit(50)
+    .toArray();
+
+  const summaries: ConversationSummary[] = [];
+  for (const session of sessions) {
+    const sessionId = String(session.sessionId);
+    const messageCount = await db.collection("messages").countDocuments({ sessionId });
+    if (messageCount === 0) {
+      continue;
+    }
+    const firstUser = await db.collection<MessageDoc>("messages").findOne(
+      { sessionId, role: "user" },
+      { sort: { createdAt: 1 } },
+    );
+    summaries.push({
+      sessionId,
+      title:
+        (typeof session.title === "string" && session.title) ||
+        firstUser?.content.trim().slice(0, 80) ||
+        "Conversation",
+      updatedAt: session.updatedAt instanceof Date ? session.updatedAt : new Date(),
+      messageCount,
+    });
+  }
+  return summaries;
 }
 
 export async function formatHistory(

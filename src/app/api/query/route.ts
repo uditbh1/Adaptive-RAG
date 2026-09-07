@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { runAdaptiveRag } from "@/lib/graph";
-import { appendTurn, ensureSession, formatHistory, getSession } from "@/lib/memory/sessions";
+import { appendTurn, formatHistory, getSession } from "@/lib/memory/sessions";
 import { getChunkCount, getVectorStore } from "@/lib/rag/store";
 
 export const runtime = "nodejs";
@@ -33,7 +33,6 @@ export async function POST(request: Request) {
 
   try {
     await getVectorStore();
-    await ensureSession(sessionId);
     const history = await formatHistory(sessionId);
     await appendTurn(sessionId, { role: "user", content: query });
 
@@ -61,7 +60,6 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   const sessionId = new URL(request.url).searchParams.get("sessionId") || "demo";
   try {
-    await ensureSession(sessionId);
     return NextResponse.json({
       history: await getSession(sessionId),
       chunksIndexed: await getChunkCount(),
