@@ -117,16 +117,6 @@ That command:
 
 Details: [docs/EVALUATION.md](docs/EVALUATION.md).
 
-## Screenshots (optional)
-
-GitHub already renders the Mermaid diagrams above. Screenshots are optional. If you add any, put them in `docs/images/` and link them here:
-
-1. Chat answer with path chips, sources, and hop timing  
-2. Sidebar showing indexed files  
-3. Terminal output of `npm run eval` (or just commit the generated `eval/RESULTS.md`)
-
-You do not need a hosted demo screenshot.
-
 ## Commands
 
 ```bash
