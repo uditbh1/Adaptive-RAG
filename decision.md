@@ -4,7 +4,7 @@ I keep architecture choices here so I do not lose the why. Old entries stay. If 
 
 Product: [prd.md](prd.md). Stack: [tech-stack.md](tech-stack.md). Graph: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). [`docs/DECISIONS.md`](docs/DECISIONS.md) only points here.
 
-Next ID: **D-022**.
+Next ID: **D-023**.
 
 ---
 
@@ -12,6 +12,7 @@ Next ID: **D-022**.
 
 | ID | Date | Status | Decision |
 | --- | --- | --- | --- |
+| D-022 | 2026-09-16 | Accepted | Answer modes Auto / My files / Web, file lock, provenance banner |
 | D-021 | 2026-09-07 | Accepted | 8 sample files, 60 eval cases, phrase + groundedness report |
 | D-020 | 2026-09-07 | Accepted | Optional Azure OpenAI client + CI for tsc and lint |
 | D-019 | 2026-09-07 | Accepted | Groundedness eval, citations, and hop metrics |
@@ -37,6 +38,29 @@ Next ID: **D-022**.
 ---
 
 ## Entries
+
+### D-022: Answer modes, file lock, and provenance
+
+| | |
+| --- | --- |
+| Date | 2026-09-16 |
+| Status | Accepted |
+| Area | product |
+
+**Context:** The three pipelines are real, but Auto still looks like ChatGPT: you type, it answers. The differentiator is control and provenance, not more path chips.
+
+**Decision:**
+- Composer control: **Auto** (existing classifier), **My files** (index only), **Web only** (Tavily, skip files).
+- Clicking a sidebar file locks retrieve to that filename (`lockedFile`). Click again to unlock. Delete/new chat clears the lock.
+- Every assistant turn shows a provenance banner: from your files / from the web / mixed / not from your files · model only. File answers also show a short quote from a chunk.
+- My files never calls Tavily and does not use general knowledge. If chunks cannot answer, say it is not in the indexed documents.
+- `runAdaptiveRag(question)` stays Auto. Eval does not pass a forced mode.
+
+**Why:** Users can force the source. The banner makes that source visible without reading traces.
+
+**Follow-up:** Routes stay `index | search | general`. Modes are a send-time override, not a fourth route.
+
+---
 
 ### D-021: 8 sample files, 60 eval cases, phrase + groundedness report
 

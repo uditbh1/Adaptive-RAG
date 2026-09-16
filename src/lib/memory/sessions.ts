@@ -7,6 +7,13 @@ export type ChatTurn = {
   trace?: string[];
   sources?: string[];
   metrics?: Array<{ name: string; ms: number; tokens?: number }>;
+  provenance?: {
+    kind: "files" | "web" | "mixed" | "model";
+    label: string;
+    fileSources: string[];
+    webSources: string[];
+    quote?: { source: string; text: string };
+  };
   createdAt?: Date;
 };
 
@@ -45,6 +52,7 @@ export async function getSession(sessionId: string): Promise<ChatTurn[]> {
     trace: doc.trace,
     sources: doc.sources,
     metrics: doc.metrics,
+    provenance: doc.provenance,
     createdAt: doc.createdAt,
   }));
 }
@@ -67,6 +75,7 @@ export async function appendTurn(sessionId: string, turn: ChatTurn) {
     trace: turn.trace,
     sources: turn.sources,
     metrics: turn.metrics,
+    provenance: turn.provenance,
     createdAt: new Date(),
   });
 

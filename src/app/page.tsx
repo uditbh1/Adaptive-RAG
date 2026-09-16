@@ -2,7 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, CircleAlert, FileUp, Menu, MessageSquarePlus, PanelLeft, Send, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle2, CircleAlert, FileText, FileUp, Globe, Menu, MessageSquarePlus, PanelLeft, Send, Sparkles, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,6 +15,16 @@ type HopMetric = {
   tokens?: number;
 };
 
+type AnswerMode = "auto" | "files" | "web";
+
+type Provenance = {
+  kind: "files" | "web" | "mixed" | "model";
+  label: string;
+  fileSources: string[];
+  webSources: string[];
+  quote?: { source: string; text: string };
+};
+
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -22,6 +32,7 @@ type Message = {
   trace?: string[];
   sources?: string[];
   metrics?: HopMetric[];
+  provenance?: Provenance;
 };
 
 type IndexedFile = {
@@ -44,6 +55,12 @@ const SUGGESTIONS = [
   { label: "Index", text: "What rewrite budget does this Adaptive RAG demo use?" },
   { label: "General", text: "What is 2 + 2?" },
   { label: "Search", text: "Who won the most recent UEFA Champions League final?" },
+];
+
+const ANSWER_MODES: { id: AnswerMode; label: string }[] = [
+  { id: "auto", label: "Auto" },
+  { id: "files", label: "My files" },
+  { id: "web", label: "Web only" },
 ];
 
 function pipelineVariant(route?: string) {
@@ -69,6 +86,13 @@ function formatWhen(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function provenanceVariant(kind?: Provenance["kind"]) {
+  if (kind === "web") return "web" as const;
+  if (kind === "mixed") return "mixed" as const;
+  if (kind === "files") return "files" as const;
+  return "model" as const;
 }
 
 function formatMetrics(metrics?: HopMetric[]) {
@@ -97,6 +121,8 @@ export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [indexedFiles, setIndexedFiles] = useState<IndexedFile[]>([]);
+  const [answerMode, setAnswerMode] = useState<AnswerMode>("auto");
+  const [lockedFile, setLockedFile] = useState("");
   const [question, setQuestion] = useState("");
   const [status, setStatus] = useState("Connecting…");
   const [busy, setBusy] = useState(false);
@@ -215,11 +241,38 @@ export default function HomePage() {
         await loadIndexedFiles();
       }
       showToast("success", `${filename} was removed from the index.`);
+      if (lockedFile === filename) {
+        setLockedFile("");
+        setAnswerMode("auto");
+      }
     } catch {
       showToast("error", "Could not remove the file.");
     } finally {
       setBusy(false);
     }
+  }
+
+  function setMode(mode: AnswerMode) {
+    setAnswerMode(mode);
+    if (mode !== "files") {
+      setLockedFile("");
+    }
+  }
+
+  function toggleFileLock(filename: string) {
+    if (lockedFile === filename && answerMode === "files") {
+      setLockedFile("");
+      return;
+    }
+    setLockedFile(filename);
+    setAnswerMode("files");
+  }
+
+  function composerPlaceholder() {
+    if (answerMode === "web") return "Search the web…";
+    if (answerMode === "files" && lockedFile) return `Ask about ${lockedFile}…`;
+    if (answerMode === "files") return "Ask about your indexed files…";
+    return "Message Adaptive RAG…";
   }
 
   function startNewConversation() {
@@ -229,6 +282,8 @@ export default function HomePage() {
     setMessages([]);
     setQuestion("");
     setStatus("New chat");
+    setAnswerMode("auto");
+    setLockedFile("");
   }
 
   async function onUpload(file: File) {
@@ -283,7 +338,12 @@ export default function HomePage() {
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, sessionId }),
+        body: JSON.stringify({
+          query,
+          sessionId,
+          mode: answerMode,
+          lockedFile: answerMode === "files" ? lockedFile : "",
+        }),
       });
       const data = (await res.json()) as {
         error?: string;
@@ -293,6 +353,7 @@ export default function HomePage() {
         chunksIndexed?: number;
         sources?: string[];
         metrics?: HopMetric[];
+        provenance?: Provenance;
       };
       if (!res.ok) {
         setStatus(data.error ?? "Query failed");
@@ -311,6 +372,7 @@ export default function HomePage() {
           trace: data.trace,
           sources: data.sources,
           metrics: data.metrics,
+          provenance: data.provenance,
         },
       ]);
       setStatus(
@@ -405,33 +467,56 @@ export default function HomePage() {
                 </p>
               ) : (
                 <ul className="space-y-1">
-                  {indexedFiles.map((file) => (
-                    <li
-                      key={`${file.origin}-${file.filename}`}
-                      className="flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-foreground">{file.filename}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {file.origin} · {file.chunks} chunks
-                        </p>
-                      </div>
-                      {file.canDelete ? (
-                        <Button
+                  {indexedFiles.map((file) => {
+                    const locked = lockedFile === file.filename && answerMode === "files";
+                    return (
+                      <li
+                        key={`${file.origin}-${file.filename}`}
+                        className={cn(
+                          "flex items-center gap-1 rounded-xl px-1 py-1 text-xs",
+                          locked && "bg-primary/10",
+                        )}
+                      >
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="iconSm"
                           disabled={busy}
-                          aria-label={`Remove ${file.filename}`}
-                          onClick={() => void onDeleteFile(file.filename)}
+                          onClick={() => toggleFileLock(file.filename)}
+                          className="min-w-0 flex-1 rounded-lg px-1 py-1 text-left hover:bg-accent"
+                          title={
+                            locked
+                              ? "Unlock — answer from all indexed files"
+                              : "Answer from this file only"
+                          }
                         >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      ) : null}
-                    </li>
-                  ))}
+                          <p className="truncate text-foreground">{file.filename}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {locked
+                              ? "This file only"
+                              : `${file.origin} · ${file.chunks} chunks`}
+                          </p>
+                        </button>
+                        {file.canDelete ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="iconSm"
+                            disabled={busy}
+                            aria-label={`Remove ${file.filename}`}
+                            onClick={() => void onDeleteFile(file.filename)}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
+              {indexedFiles.length > 0 ? (
+                <p className="mt-2 px-2 text-[11px] text-muted-foreground">
+                  Click a file to lock answers to it.
+                </p>
+              ) : null}
             </ScrollArea>
           </motion.aside>
         ) : null}
@@ -488,8 +573,8 @@ export default function HomePage() {
                 </div>
                 <h1 className="text-2xl font-semibold tracking-tight">How can I help?</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  I route each question to Index, Search, or General. Ask something, or start with a
-                  suggestion.
+                  Choose Auto, My files, or Web only. Click a file in the sidebar to answer from
+                  that file alone. Every reply shows where it came from.
                 </p>
                 <div className="mt-6 flex flex-col gap-2">
                   {SUGGESTIONS.map((item) => (
@@ -527,12 +612,27 @@ export default function HomePage() {
                               : "rounded-bl-md bg-card text-foreground",
                           )}
                         >
-                          {!isUser && pipeline ? (
-                            <Badge variant={pipelineVariant(message.route)} className="mb-2">
-                              {pipeline}
-                            </Badge>
+                          {!isUser ? (
+                            <div className="mb-2 flex flex-wrap items-center gap-1">
+                              {message.provenance ? (
+                                <Badge variant={provenanceVariant(message.provenance.kind)}>
+                                  {message.provenance.label}
+                                </Badge>
+                              ) : null}
+                              {pipeline ? (
+                                <Badge variant={pipelineVariant(message.route)}>{pipeline}</Badge>
+                              ) : null}
+                            </div>
                           ) : null}
                           <div className="whitespace-pre-wrap">{message.content}</div>
+                          {message.provenance?.quote ? (
+                            <blockquote className="mt-3 border-l-2 border-primary/40 pl-3 text-xs leading-5 text-muted-foreground">
+                              <p className="italic">“{message.provenance.quote.text}”</p>
+                              <footer className="mt-1 not-italic opacity-80">
+                                {message.provenance.quote.source}
+                              </footer>
+                            </blockquote>
+                          ) : null}
                           {message.sources && message.sources.length > 0 ? (
                             <div className="mt-2 flex flex-wrap gap-1">
                               {message.sources.map((source) => (
@@ -619,22 +719,61 @@ export default function HomePage() {
         </AnimatePresence>
 
         <div className="border-t border-border bg-background/80 px-4 py-3 backdrop-blur">
-          <form onSubmit={onAsk} className="mx-auto flex w-full max-w-3xl items-end gap-2">
-            <Textarea
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              onKeyDown={onKeyDown}
-              rows={1}
-              placeholder="Message Adaptive RAG…"
-              className="max-h-36 min-h-12"
-            />
-            <Button type="submit" size="icon" disabled={!canAsk} aria-label="Send">
-              <Send className="size-4" />
-            </Button>
-          </form>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">
-            Enter to send · Shift+Enter for a new line
-          </p>
+          <div className="mx-auto w-full max-w-3xl">
+            {answerMode === "files" && lockedFile ? (
+              <div className="mb-2 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] text-foreground">
+                  <FileText className="size-3" />
+                  This file only · {lockedFile}
+                  <button
+                    type="button"
+                    className="rounded-full p-0.5 hover:bg-background/60"
+                    aria-label="Unlock file"
+                    onClick={() => setLockedFile("")}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              </div>
+            ) : null}
+            <div className="mb-2 flex flex-wrap gap-1">
+              {ANSWER_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setMode(mode.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px]",
+                    answerMode === mode.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-muted-foreground hover:bg-accent",
+                  )}
+                >
+                  {mode.id === "auto" ? <Sparkles className="size-3" /> : null}
+                  {mode.id === "files" ? <FileText className="size-3" /> : null}
+                  {mode.id === "web" ? <Globe className="size-3" /> : null}
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={onAsk} className="flex items-end gap-2">
+              <Textarea
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                onKeyDown={onKeyDown}
+                rows={1}
+                placeholder={composerPlaceholder()}
+                className="max-h-36 min-h-12"
+              />
+              <Button type="submit" size="icon" disabled={!canAsk} aria-label="Send">
+                <Send className="size-4" />
+              </Button>
+            </form>
+            <p className="mt-2 text-center text-[11px] text-muted-foreground">
+              Enter to send · Shift+Enter for a new line
+            </p>
+          </div>
         </div>
       </div>
     </div>

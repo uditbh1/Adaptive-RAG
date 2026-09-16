@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runAdaptiveRag } from "@/lib/graph";
+import type { AnswerMode } from "@/lib/graph/state";
 import { hasLlmCredentials } from "@/lib/llm";
 import { appendTurn, formatHistory, getSession } from "@/lib/memory/sessions";
 import { getChunkCount, getVectorStore } from "@/lib/rag/store";
@@ -16,10 +17,15 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     query?: string;
     sessionId?: string;
+    mode?: AnswerMode;
+    lockedFile?: string;
   };
 
   const query = body.query?.trim();
   const sessionId = body.sessionId?.trim() || "demo";
+  const mode: AnswerMode =
+    body.mode === "files" || body.mode === "web" ? body.mode : "auto";
+  const lockedFile = mode === "files" ? body.lockedFile?.trim() || "" : "";
 
   if (!query) {
     return NextResponse.json({ error: "query is required" }, { status: 400 });
@@ -40,7 +46,7 @@ export async function POST(request: Request) {
     const history = await formatHistory(sessionId);
     await appendTurn(sessionId, { role: "user", content: query });
 
-    const result = await runAdaptiveRag(query, history);
+    const result = await runAdaptiveRag(query, history, { mode, lockedFile });
     const turns = await appendTurn(sessionId, {
       role: "assistant",
       content: result.answer,
@@ -48,6 +54,7 @@ export async function POST(request: Request) {
       trace: result.trace,
       sources: result.sources,
       metrics: result.metrics,
+      provenance: result.provenance,
     });
 
     return NextResponse.json({
@@ -56,6 +63,7 @@ export async function POST(request: Request) {
       trace: result.trace,
       sources: result.sources,
       metrics: result.metrics,
+      provenance: result.provenance,
       rewriteCount: result.rewriteCount,
       chunksIndexed: await getChunkCount(),
       history: turns,

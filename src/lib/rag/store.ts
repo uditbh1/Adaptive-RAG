@@ -415,8 +415,13 @@ export async function retrieveDocuments(
   query: string,
   k = 4,
   originalQuestion?: string,
+  lockedFile?: string,
 ) {
   const store = await getVectorStore();
+  if (lockedFile?.trim()) {
+    return retrieveBySources([lockedFile.trim()]);
+  }
+
   const asked = originalQuestion?.trim() || query;
   const namedSources = matchSources(
     `${asked}\n${query}`,

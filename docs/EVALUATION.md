@@ -2,7 +2,7 @@
 
 ## What we measure
 
-1. **Router accuracy.** For each of the 60 cases in [`eval/cases.json`](../eval/cases.json), does `runAdaptiveRag` set `route` to `expectedRoute`?
+1. **Router accuracy.** For each of the 60 cases in [`eval/cases.json`](../eval/cases.json), does `runAdaptiveRag` set `route` to `expectedRoute`? Eval calls `runAdaptiveRag(question)` with no `mode`, so it always uses Auto.
 2. **Phrase checks.** Index cases list `mustContain` strings that must appear in the answer (from the sample files).
 3. **Groundedness.** After an index run, each claim in the answer is checked against the retrieved chunks. A claim counts as supported if enough of its content words appear in those chunks.
 

@@ -3,7 +3,8 @@ import { TavilySearch } from "@langchain/tavily";
 import { getChatModel } from "../llm";
 import { matchSources, retrieveDocuments } from "../rag/store";
 import { timeHop, tokensFromMessage } from "./observe";
-import type { GraphStateType, RetrievedDoc, Route } from "./state";
+import { buildProvenance } from "./provenance";
+import type { AnswerMode, GraphStateType, RetrievedDoc, Route } from "./state";
 
 const routeSchema = z.object({
   route: z
@@ -59,6 +60,23 @@ function formatHistoryBlock(history: string) {
 }
 
 export async function routeNode(state: GraphStateType) {
+  const mode: AnswerMode = state.answerMode || "auto";
+  if (mode === "files") {
+    const lock = state.lockedFile ? [`lock=${state.lockedFile}`] : [];
+    return {
+      route: "index" as Route,
+      trace: ["route=index", "mode=files", ...lock],
+      metrics: [{ name: "classify", ms: 0 }],
+    };
+  }
+  if (mode === "web") {
+    return {
+      route: "search" as Route,
+      trace: ["route=search", "mode=web"],
+      metrics: [{ name: "classify", ms: 0 }],
+    };
+  }
+
   const { result, metrics } = await timeHop("classify", async () => {
     const llm = getChatModel().withStructuredOutput(routeSchema);
     return llm.invoke([
@@ -87,7 +105,12 @@ Use the conversation history to resolve short follow-ups like "what about hybrid
 
 export async function retrieveNode(state: GraphStateType) {
   const { result: documents, metrics } = await timeHop("retrieve", () =>
-    retrieveDocuments(state.question, 4, state.originalQuestion),
+    retrieveDocuments(
+      state.question,
+      4,
+      state.originalQuestion,
+      state.lockedFile || undefined,
+    ),
   );
   return {
     documents,
@@ -158,6 +181,14 @@ export async function rewriteNode(state: GraphStateType) {
 }
 
 export async function webSearchNode(state: GraphStateType) {
+  if ((state.answerMode || "auto") === "files") {
+    return {
+      documents: keepIndexedDocs(state.documents),
+      trace: ["webSearch=blocked"],
+      metrics: [{ name: "webSearch", ms: 0 }],
+    };
+  }
+
   const { result, metrics } = await timeHop("webSearch", async () => {
     if (!process.env.TAVILY_API_KEY) {
       const kept = keepIndexedDocs(state.documents);
@@ -221,6 +252,12 @@ export async function generalLlmNode(state: GraphStateType) {
     sources: [],
     trace: ["general"],
     metrics,
+    provenance: buildProvenance({
+      mode: state.answerMode || "auto",
+      route: "general",
+      relevant: false,
+      documents: [],
+    }),
   };
 }
 
@@ -243,7 +280,32 @@ function withSourceFooter(answer: string, sources: string[]) {
 
 export async function generateNode(state: GraphStateType) {
   const asked = state.originalQuestion || state.question;
+  const mode: AnswerMode = state.answerMode || "auto";
+  const filesOnly = mode === "files";
+  const webOnly = mode === "web";
+
+  if (filesOnly && (!state.relevant || state.documents.length === 0)) {
+    return {
+      answer: "That is not in the indexed documents.",
+      sources: [],
+      trace: ["generate=not-in-docs"],
+      metrics: [{ name: "generate", ms: 0 }],
+      provenance: buildProvenance({
+        mode,
+        route: state.route || "index",
+        relevant: false,
+        documents: state.documents,
+      }),
+    };
+  }
+
   const sources = collectSources(state.documents);
+  const system = filesOnly
+    ? "Answer using ONLY the file chunks. If they do not contain the answer, say it is not in the indexed documents. Do not use general knowledge or the web. When you can, quote a short line from the file. Keep the answer short."
+    : webOnly
+      ? "Answer using only the web snippets. Do not claim you read the user's files. Mention URLs when they appear. Keep the answer short."
+      : "Answer using the provided context. Use file chunks for questions about uploaded documents and web snippets for live facts. You may combine both in one answer. If a named file is in the context, summarise it. Only say you do not know when that part is missing from the context. Cite source filenames or URLs. Keep the answer short.";
+
   let tokens: number | undefined;
   const { result, metrics } = await timeHop(
     "generate",
@@ -252,8 +314,7 @@ export async function generateNode(state: GraphStateType) {
       const message = await llm.invoke([
         {
           role: "system",
-          content:
-            "Answer using the provided context. Use file chunks for questions about uploaded documents and web snippets for live facts. You may combine both in one answer. If a named file is in the context, summarise it. Only say you do not know when that part is missing from the context. Cite source filenames or URLs. Keep the answer short.",
+          content: system,
         },
         {
           role: "user",
@@ -271,20 +332,33 @@ export async function generateNode(state: GraphStateType) {
     sources,
     trace: ["generate"],
     metrics,
+    provenance: buildProvenance({
+      mode,
+      route: state.route || "index",
+      relevant: state.relevant,
+      documents: state.documents,
+    }),
   };
 }
 
 export function afterRoute(state: GraphStateType) {
+  if ((state.answerMode || "auto") === "files") return "retrieve";
+  if ((state.answerMode || "auto") === "web") return "webSearch";
   if (state.route === "search") return "webSearch";
   if (state.route === "general") return "generalLlm";
   return "retrieve";
 }
 
 export function afterGrade(state: GraphStateType) {
+  const mode: AnswerMode = state.answerMode || "auto";
   const asked = state.originalQuestion || state.question;
-  if (state.relevant && needsLiveWeb(asked)) return "webSearch";
-  if (state.relevant) return "generate";
+  if (state.relevant) {
+    if (mode === "files") return "generate";
+    if (needsLiveWeb(asked)) return "webSearch";
+    return "generate";
+  }
   if (state.rewriteCount < 1) return "rewrite";
+  if (mode === "files") return "generate";
   return "webSearch";
 }
 

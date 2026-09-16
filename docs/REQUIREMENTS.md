@@ -21,6 +21,8 @@ A single chat model either invents sources or always retrieves documents, even w
 4. I see each hop (`route`, `retrieve`, `grade`, `rewrite`, `webSearch`, `generate`) next to the answer, plus sources and timing.
 5. I run `npm run eval` and get pass/fail per expected route, plus a groundedness score on index answers.
 6. I can see indexed files in the sidebar and remove an upload.
+7. I can force My files or Web only, or lock answers to one indexed file.
+8. Every answer shows whether it came from my files, the web, both, or the model alone. File answers include a short quote.
 
 ## Functional requirements
 
@@ -30,19 +32,21 @@ A single chat model either invents sources or always retrieves documents, even w
 | FR-2 | `index` retrieves Qdrant chunks with hybrid search (vector + keyword, RRF). If the question names an uploaded `.txt`, those chunks are used first. |
 | FR-3 | A grade node marks retrieved chunks relevant or not. A named-file hit is relevant even if the question also asks for live web facts. |
 | FR-4 | If not relevant and `rewriteCount < 1`, rewrite the question and retrieve again. |
-| FR-5 | If still not relevant, fall back to web search, then generate. Web search keeps earlier file chunks. Mixed file + live questions also search after a relevant retrieve. |
+| FR-5 | In Auto, if still not relevant, fall back to web search, then generate. Web search keeps earlier file chunks. Mixed file + live questions also search after a relevant retrieve. My files never falls back to the web. |
 | FR-6 | `search` calls Tavily and then generate. |
 | FR-7 | `general` answers with the chat model only. |
 | FR-8 | Accept `.txt` uploads; split at about 1000 characters with 150 overlap; persist in Qdrant. Same filename overwrites the previous copy; identical content is not indexed again. |
 | FR-9 | Seed every `.txt` in `data/sample/` if that filename is not already in Qdrant. |
-| FR-10 | Query API returns `{ answer, route, trace, sources, metrics }`. |
-| FR-11 | UI shows the three pipelines, upload, chat, path chips, sources, and hop timing. |
+| FR-10 | Query API accepts `{ query, sessionId, mode, lockedFile }` and returns `{ answer, route, trace, sources, metrics, provenance }`. `mode` defaults to Auto. |
+| FR-11 | UI shows Auto / My files / Web only, file lock, provenance banner, quote, path chips, sources, and hop timing. |
 | FR-12 | Chat turns and session metadata are stored in MongoDB by `sessionId`. |
 | FR-13 | The browser keeps `sessionId` in `localStorage` so refresh restores the conversation. |
 | FR-14 | Classify, generate, and general receive recent conversation history. |
-| FR-15 | Sidebar lists indexed files. Uploads can be deleted from Qdrant and disk. The sample file cannot. |
+| FR-15 | Sidebar lists indexed files. Uploads can be deleted from Qdrant and disk. The sample file cannot. Clicking a file locks retrieve to that source. |
 | FR-16 | Index answers are checked for groundedness in `npm run eval`. |
 | FR-17 | Chat and embeddings use OpenAI, or Azure OpenAI when those env vars are set. |
+| FR-18 | My files skips the classifier, retrieves (optionally one locked file), and generates or refuses. It does not call Tavily or answer from general knowledge. |
+| FR-19 | Web only skips retrieve and goes to Tavily, then generate. |
 
 ## Non-functional requirements
 

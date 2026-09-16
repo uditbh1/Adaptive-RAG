@@ -10,7 +10,7 @@ import {
   routeNode,
   webSearchNode,
 } from "./nodes";
-import { GraphState, type HopMetric, type RetrievedDoc, type Route } from "./state";
+import { GraphState, type AnswerMode, type HopMetric, type Provenance, type RetrievedDoc, type Route } from "./state";
 
 const workflow = new StateGraph(GraphState)
   .addNode("classify", routeNode)
@@ -47,12 +47,18 @@ export type AdaptiveRagResult = {
   sources: string[];
   documents: RetrievedDoc[];
   metrics: HopMetric[];
+  provenance: Provenance;
+  answerMode: AnswerMode;
+  lockedFile: string;
 };
 
 export async function runAdaptiveRag(
   question: string,
   history = "",
+  options?: { mode?: AnswerMode; lockedFile?: string },
 ): Promise<AdaptiveRagResult> {
+  const answerMode = options?.mode ?? "auto";
+  const lockedFile = options?.lockedFile?.trim() ?? "";
   const state = await adaptiveRagGraph.invoke({
     question,
     originalQuestion: question,
@@ -65,6 +71,8 @@ export async function runAdaptiveRag(
     trace: [],
     sources: [],
     metrics: [],
+    answerMode,
+    lockedFile,
   });
 
   return {
@@ -75,5 +83,8 @@ export async function runAdaptiveRag(
     sources: state.sources,
     documents: state.documents,
     metrics: state.metrics,
+    provenance: state.provenance,
+    answerMode: state.answerMode,
+    lockedFile: state.lockedFile,
   };
 }

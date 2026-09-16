@@ -17,7 +17,7 @@ Most “chat with my files” apps do one of two things:
 - Always call the model (no retrieval, weak on private docs)
 - Always retrieve (waste on “hello”, stale on live news)
 
-Neither shows control. This app picks a path per question, checks retrieved text, and shows that path.
+Neither shows control. This app picks a path per question, checks retrieved text, and lets you force files or the web. Every answer says where it came from.
 
 ## 2. Who it is for
 
@@ -28,10 +28,10 @@ Neither shows control. This app picks a path per question, checks retrieved text
 
 ## 3. Product goals
 
-1. Route each question to **index**, **search**, or **general**.
+1. Route each question to **index**, **search**, or **general** (Auto), or honour **My files** / **Web only**.
 2. Use documents only when chunks pass a relevance grade.
-3. Bound cost: **one rewrite**, then web search.
-4. Make the path, sources, and hop timing visible.
+3. Bound cost: **one rewrite**, then web search (Auto only). My files never falls back to the web.
+4. Make provenance, path, sources, and hop timing visible.
 5. Measure the router and index groundedness (`npm run eval`).
 6. Persist chat in MongoDB so refresh does not wipe the conversation.
 7. Store document vectors in Qdrant, with hybrid retrieve.
@@ -52,18 +52,21 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 
 1. Open the app. Sample knowledge base (`data/sample/azure-ai.txt`) is indexed into Qdrant on first use. Chat loads from MongoDB if this browser already has a session.
 2. Optional: upload a `.txt`; it is chunked and indexed in Qdrant. The sidebar lists indexed files. Re-uploading the same name replaces the old copy.
-3. Ask a question. Classification picks **Index**, **General**, or **Search**.
-4. See the pipeline badge, path chips, sources, and hop timing.
-5. Refresh: bubbles come back. Indexed files stay in Qdrant.
+3. Optional: pick Auto, My files, or Web only. Click a sidebar file to lock answers to that file.
+4. Ask a question. Auto classification still picks **Index**, **General**, or **Search**. Forced modes skip the classifier.
+5. See a provenance banner (files / web / mixed / model), a short file quote when the answer came from docs, plus path chips, sources, and hop timing.
+6. Refresh: bubbles come back. Indexed files stay in Qdrant.
 
 ### Paths
 
 | User intent | Product path |
 | --- | --- |
-| Question about uploaded or sample docs | `index` → hybrid retrieve (named file first) → grade → (rewrite once if needed) → generate or web fallback |
-| File question plus a live fact | `index` → retrieve named file → keep those chunks → web search → generate |
-| Live / current-world fact | `search` → Tavily → generate |
-| Greeting, small talk, simple math | `general` → model only |
+| Auto: question about uploaded or sample docs | `index` → hybrid retrieve (named file first) → grade → (rewrite once if needed) → generate or web fallback |
+| Auto: file question plus a live fact | `index` → retrieve named file → keep those chunks → web search → generate |
+| Auto: live / current-world fact | `search` → Tavily → generate |
+| Auto: greeting, small talk, simple math | `general` → model only |
+| My files (optional lock to one file) | always `index`; retrieve that file or all files; never Tavily; refuse if chunks cannot answer |
+| Web only | always `search` → Tavily → generate |
 
 ### Failure behavior
 
@@ -72,7 +75,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | Empty or non-`.txt` upload | Clear error; no index change |
 | Missing model key | Query fails with a setup message |
 | Missing `TAVILY_API_KEY` | Web hop explains search is not configured; no crash |
-| Weak chunks after one rewrite | Fall back to web, then generate |
+| Weak chunks after one rewrite | Auto: fall back to web, then generate. My files: generate/refuse from file chunks only |
 | Generator has no useful context | Say it does not know; do not invent sources |
 
 ## 6. Features (v1)
@@ -89,6 +92,9 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | Citations | Source filenames / URLs on the answer | Index and search answers show sources |
 | Hop metrics | Time (and tokens when the API returns them) per node | Shown under the path chips |
 | General answers | No retrieval | Greetings do not call retrieve |
+| Answer modes | Auto / My files / Web only at send time | Files-only never hits Tavily; Web only skips retrieve |
+| File lock | Click a sidebar file to retrieve that source only | Answers stay on that filename until unlocked |
+| Provenance | Banner + optional file quote on every assistant turn | User can tell files vs web vs model |
 | Path UI | Pipeline badge + `trace` chips | The graph is visible without logs |
 | Sessions | MongoDB messages + `localStorage` session id | Refresh restores chat |
 | Eval | 10 router cases + index groundedness | `npm run eval` prints both scores |
@@ -125,6 +131,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | Groundedness eval, citations, hop metrics | Done |
 | Optional Azure OpenAI client | Done |
 | CI (`tsc` + lint) | Done |
+| Answer modes, file lock, provenance banner | Done |
 | PDF ingest | Out of scope until this PRD changes |
 
 ---
