@@ -9,10 +9,11 @@ Two collections are used: sessions and messages.
 
 Browser state
 -------------
-The browser keeps sessionId in localStorage under the key
-adaptive-rag-session. Refresh restores the conversation if that id still
-exists. There is no login. One browser has one current session until
-New chat is clicked.
+The browser keeps the open sessionId in localStorage under the key
+adaptive-rag-session. It also keeps the ids of chats started in this
+browser under adaptive-rag-sessions. The sidebar loads only those ids.
+Refresh restores the open conversation. There is no login. New chat
+adds another id to that list. Chats from another browser are not shown.
 
 History window
 --------------

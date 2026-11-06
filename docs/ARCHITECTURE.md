@@ -79,12 +79,17 @@ JSON `{ query, sessionId, mode?, lockedFile? }`. `mode` is `auto` (default), `fi
 **GET `/api/query?sessionId=`**  
 Full session history and Qdrant chunk count.
 
+**POST `/api/sessions`**  
+JSON `{ sessionIds }`. Returns title, time, and message count for those ids only. Unknown ids and empty sessions are omitted. There is no list-all endpoint.
+
 ## Persistence
 
 | Data | Where | Survives refresh? | Survives server restart? |
 | --- | --- | --- | --- |
 | Chat | MongoDB `messages` | Yes (same `sessionId` in `localStorage`) | Yes |
 | Session metadata | MongoDB `sessions` | Yes | Yes |
+| Open chat id | `localStorage` key `adaptive-rag-session` | Yes, this browser | No |
+| Known chat ids | `localStorage` key `adaptive-rag-sessions` | Yes, this browser | No |
 | Vectors | Qdrant collection | Yes | Yes |
 | Raw uploads | `data/uploads/{filename}` (one file per name) | Yes | Yes |
 

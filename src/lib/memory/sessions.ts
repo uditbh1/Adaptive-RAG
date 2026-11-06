@@ -93,13 +93,35 @@ export async function appendTurn(sessionId: string, turn: ChatTurn) {
   return getSession(sessionId);
 }
 
-export async function listConversations(): Promise<ConversationSummary[]> {
+const MAX_LISTED_SESSIONS = 50;
+const SESSION_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function parseSessionIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const ids: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string") continue;
+    const id = item.trim();
+    if (!SESSION_ID_RE.test(id) || ids.includes(id)) continue;
+    ids.push(id);
+    if (ids.length >= MAX_LISTED_SESSIONS) break;
+  }
+  return ids;
+}
+
+export async function listConversations(
+  sessionIds: string[],
+): Promise<ConversationSummary[]> {
+  const ids = parseSessionIds(sessionIds);
+  if (ids.length === 0) return [];
+
   const db = await getMongoDb();
   const sessions = await db
     .collection("sessions")
-    .find({})
+    .find({ sessionId: { $in: ids } })
     .sort({ updatedAt: -1 })
-    .limit(50)
+    .limit(MAX_LISTED_SESSIONS)
     .toArray();
 
   const summaries: ConversationSummary[] = [];

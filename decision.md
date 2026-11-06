@@ -4,7 +4,7 @@ I keep architecture choices here so I do not lose the why. Old entries stay. If 
 
 Product: [prd.md](prd.md). Stack: [tech-stack.md](tech-stack.md). Graph: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). [`docs/DECISIONS.md`](docs/DECISIONS.md) only points here.
 
-Next ID: **D-023**.
+Next ID: **D-024**.
 
 ---
 
@@ -12,6 +12,7 @@ Next ID: **D-023**.
 
 | ID | Date | Status | Decision |
 | --- | --- | --- | --- |
+| D-023 | 2026-11-06 | Accepted | Sidebar lists only session ids stored in this browser |
 | D-022 | 2026-09-16 | Accepted | Answer modes Auto / My files / Web, file lock, provenance banner |
 | D-021 | 2026-09-07 | Accepted | 8 sample files, 60 eval cases, phrase + groundedness report |
 | D-020 | 2026-09-07 | Accepted | Optional Azure OpenAI client + CI for tsc and lint |
@@ -38,6 +39,24 @@ Next ID: **D-023**.
 ---
 
 ## Entries
+
+### D-023: Sidebar lists only this browser's chats
+
+| | |
+| --- | --- |
+| Date | 2026-11-06 |
+| Status | Accepted |
+| Area | product |
+
+**Context:** MongoDB holds every chat, and `GET /api/sessions` returned all of them. On a shared Atlas database that list is visible to every visitor. There is still no login.
+
+**Decision:** The browser stores its own session ids in `localStorage` (`adaptive-rag-sessions`) and the open id in `adaptive-rag-session`. `POST /api/sessions` accepts `{ sessionIds }` and returns only those conversations. New chat appends an id. Incognito and other browsers start with an empty list. Chats whose ids were never stored in this browser stay in MongoDB and do not appear.
+
+**Why:** The session id is the only separator between visitors. Listing every row defeats that.
+
+**Follow-up:** Narrows the chat-list part of D-015. Messages still live in MongoDB.
+
+---
 
 ### D-022: Answer modes, file lock, and provenance
 

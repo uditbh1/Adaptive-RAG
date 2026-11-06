@@ -40,7 +40,7 @@ A single chat model either invents sources or always retrieves documents, even w
 | FR-10 | Query API accepts `{ query, sessionId, mode, lockedFile }` and returns `{ answer, route, trace, sources, metrics, provenance }`. `mode` defaults to Auto. |
 | FR-11 | UI shows Auto / My files / Web only, file lock, provenance banner, quote, path chips, sources, and hop timing. |
 | FR-12 | Chat turns and session metadata are stored in MongoDB by `sessionId`. |
-| FR-13 | The browser keeps `sessionId` in `localStorage` so refresh restores the conversation. |
+| FR-13 | The browser keeps the open `sessionId` and its own session-id list in `localStorage`. The sessions API returns only those ids. Refresh restores the open conversation. |
 | FR-14 | Classify, generate, and general receive recent conversation history. |
 | FR-15 | Sidebar lists indexed files. Uploads can be deleted from Qdrant and disk. The sample file cannot. Clicking a file locks retrieve to that source. |
 | FR-16 | Index answers are checked for groundedness in `npm run eval`. |

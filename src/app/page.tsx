@@ -50,6 +50,30 @@ type Conversation = {
 };
 
 const SESSION_KEY = "adaptive-rag-session";
+const SESSION_LIST_KEY = "adaptive-rag-sessions";
+const MAX_LOCAL_SESSIONS = 50;
+
+function readKnownSessionIds(): string[] {
+  try {
+    const raw = window.localStorage.getItem(SESSION_LIST_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+      .map((id) => id.trim())
+      .slice(0, MAX_LOCAL_SESSIONS);
+  } catch {
+    return [];
+  }
+}
+
+function rememberSessionId(id: string) {
+  const ids = [id, ...readKnownSessionIds().filter((item) => item !== id)].slice(
+    0,
+    MAX_LOCAL_SESSIONS,
+  );
+  window.localStorage.setItem(SESSION_LIST_KEY, JSON.stringify(ids));
+}
 
 const SUGGESTIONS = [
   { label: "Index", text: "What rewrite budget does this Adaptive RAG demo use?" },
@@ -156,7 +180,11 @@ export default function HomePage() {
 
   const loadConversations = useCallback(async () => {
     try {
-      const res = await fetch("/api/sessions");
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionIds: readKnownSessionIds() }),
+      });
       const data = (await res.json()) as { sessions?: Conversation[] };
       if (Array.isArray(data.sessions)) {
         setConversations(data.sessions);
@@ -169,16 +197,19 @@ export default function HomePage() {
   useEffect(() => {
     const existing = window.localStorage.getItem(SESSION_KEY);
     const id = existing ?? crypto.randomUUID();
-    if (!existing) {
-      window.localStorage.setItem(SESSION_KEY, id);
-    }
+    window.localStorage.setItem(SESSION_KEY, id);
+    rememberSessionId(id);
     setSessionId(id);
   }, []);
 
   useEffect(() => {
-    void loadConversations();
     void loadIndexedFiles();
-  }, [loadConversations, loadIndexedFiles]);
+  }, [loadIndexedFiles]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    void loadConversations();
+  }, [sessionId, loadConversations]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -218,6 +249,7 @@ export default function HomePage() {
 
   function openConversation(id: string) {
     window.localStorage.setItem(SESSION_KEY, id);
+    rememberSessionId(id);
     setSessionId(id);
     setQuestion("");
   }
@@ -278,6 +310,7 @@ export default function HomePage() {
   function startNewConversation() {
     const id = crypto.randomUUID();
     window.localStorage.setItem(SESSION_KEY, id);
+    rememberSessionId(id);
     setSessionId(id);
     setMessages([]);
     setQuestion("");

@@ -18,7 +18,9 @@ API surface
 -----------
 POST /api/upload accepts a .txt file. GET /api/sources lists indexed
 files. DELETE /api/sources removes an upload. POST /api/query runs the
-graph. GET /api/query?sessionId= returns chat history.
+graph. GET /api/query?sessionId= returns one chat's history. POST
+/api/sessions returns summaries only for the session ids the browser
+sends.
 
 CI
 --

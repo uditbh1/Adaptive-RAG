@@ -38,7 +38,7 @@ Neither shows control. This app picks a path per question, checks retrieved text
 
 ## 4. Non-goals (v1)
 
-- Accounts, login, or multi-user isolation (session ID in the browser is enough)
+- Accounts or login. The chat list is the session ids stored in that browser, not every MongoDB session.
 - PDF / Office upload
 - Multi-agent roleplay
 - Production rate limits, billing, or packaging the Next.js app in Docker
@@ -50,7 +50,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 
 ### Happy path
 
-1. Open the app. Sample knowledge base (`data/sample/azure-ai.txt`) is indexed into Qdrant on first use. Chat loads from MongoDB if this browser already has a session.
+1. Open the app. Sample knowledge base (`data/sample/azure-ai.txt`) is indexed into Qdrant on first use. This browser's chats load from MongoDB using the session ids in `localStorage`.
 2. Optional: upload a `.txt`; it is chunked and indexed in Qdrant. The sidebar lists indexed files. Re-uploading the same name replaces the old copy.
 3. Optional: pick Auto, My files, or Web only. Click a sidebar file to lock answers to that file.
 4. Ask a question. Auto classification still picks **Index**, **General**, or **Search**. Forced modes skip the classifier.
@@ -96,7 +96,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | File lock | Click a sidebar file to retrieve that source only | Answers stay on that filename until unlocked |
 | Provenance | Banner + optional file quote on every assistant turn | User can tell files vs web vs model |
 | Path UI | Pipeline badge + `trace` chips | The graph is visible without logs |
-| Sessions | MongoDB messages + `localStorage` session id | Refresh restores chat |
+| Sessions | MongoDB messages. The browser stores the open session id and the list of its own session ids | Sidebar and refresh show only this browser's chats |
 | Eval | 10 router cases + index groundedness | `npm run eval` prints both scores |
 
 ## 7. Success metrics
@@ -116,7 +116,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 - Secrets: `.env.local` only
 - Models: OpenAI by default; Azure OpenAI if those env vars are set (`src/lib/llm.ts`)
 - Vectors: Qdrant
-- Chat: MongoDB by `sessionId` (no login)
+- Chat: MongoDB by `sessionId`. The sidebar asks only for ids stored in this browser (no login)
 
 ## 9. Milestones
 
