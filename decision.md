@@ -10,35 +10,35 @@ Next ID: **D-028**.
 
 ## Index
 
-| ID | Date | Status | Decision |
-| --- | --- | --- | --- |
-| D-027 | 2026-11-07 | Accepted | Auto peeks at this user's files before web or model |
-| D-026 | 2026-11-07 | Accepted | Signup/login; chats and uploads scoped by Mongo user id |
-| D-025 | 2026-11-07 | Superseded by D-026 | Questions carry sessionId; retrieve filters Qdrant by owner |
-| D-024 | 2026-11-07 | Superseded by D-026 | Uploads are scoped by a browser owner id, like chats |
-| D-023 | 2026-11-06 | Superseded by D-026 | Sidebar lists only session ids stored in this browser |
-| D-022 | 2026-09-16 | Accepted | Answer modes Auto / My files / Web, file lock, provenance banner |
-| D-021 | 2026-09-07 | Accepted | 8 sample files, 60 eval cases, phrase + groundedness report |
-| D-020 | 2026-09-07 | Accepted | Optional Azure OpenAI client + CI for tsc and lint |
-| D-019 | 2026-09-07 | Accepted | Groundedness eval, citations, and hop metrics |
-| D-018 | 2026-09-07 | Accepted | Hybrid retrieve and sidebar file list/delete |
-| D-017 | 2026-09-07 | Accepted | Re-upload of the same `.txt` replaces, does not stack |
-| D-016 | 2026-09-07 | Accepted | Named-file retrieve + keep file chunks on web fallback |
-| D-001 | 2026-09-06 | Accepted | One Next.js TypeScript app, not FastAPI + Streamlit |
-| D-002 | 2026-09-06 | Accepted | LangGraph.js `StateGraph` for Adaptive RAG |
-| D-003 | 2026-09-06 | Accepted | Three routes only: index, search, general |
-| D-004 | 2026-09-06 | Accepted | Grade cannot search; rewrite budget is one |
-| D-005 | 2026-09-06 | Superseded by D-014 | `MemoryVectorStore` + `data/store.json` |
-| D-006 | 2026-09-06 | Accepted | OpenAI + Tavily for v1, not Azure |
-| D-007 | 2026-09-06 | Superseded by D-015 | In-memory chat history by `sessionId` |
-| D-008 | 2026-09-06 | Accepted | Eval measures router, not answer prose |
-| D-009 | 2026-09-06 | Accepted | Graph node `classify` (state key stays `route`) |
-| D-010 | 2026-09-06 | Accepted | `Annotation.Root` for graph state, Zod for structured output |
-| D-011 | 2026-09-06 | Accepted | `.txt` only; no PDF in v1 |
-| D-012 | 2026-09-06 | Superseded by D-021 | Seed from `data/sample/azure-ai.txt` when the store is empty |
-| D-013 | 2026-09-07 | Accepted | Product docs: `prd.md`, `tech-stack.md`, this log |
-| D-014 | 2026-09-07 | Accepted | Qdrant is the vector store |
-| D-015 | 2026-09-07 | Accepted | MongoDB persists sessions and full chat history |
+| ID    | Date       | Status              | Decision                                                         |
+| ----- | ---------- | ------------------- | ---------------------------------------------------------------- |
+| D-027 | 2026-11-07 | Accepted            | Auto peeks at this user's files before web or model              |
+| D-026 | 2026-11-07 | Accepted            | Signup/login; chats and uploads scoped by Mongo user id          |
+| D-025 | 2026-11-07 | Superseded by D-026 | Questions carry sessionId; retrieve filters Qdrant by owner      |
+| D-024 | 2026-11-07 | Superseded by D-026 | Uploads are scoped by a browser owner id, like chats             |
+| D-023 | 2026-11-06 | Superseded by D-026 | Sidebar lists only session ids stored in this browser            |
+| D-022 | 2026-09-16 | Accepted            | Answer modes Auto / My files / Web, file lock, provenance banner |
+| D-021 | 2026-09-07 | Accepted            | 8 sample files, 60 eval cases, phrase + groundedness report      |
+| D-020 | 2026-09-07 | Accepted            | Optional Azure OpenAI client + CI for tsc and lint               |
+| D-019 | 2026-09-07 | Accepted            | Groundedness eval, citations, and hop metrics                    |
+| D-018 | 2026-09-07 | Accepted            | Hybrid retrieve and sidebar file list/delete                     |
+| D-017 | 2026-09-07 | Accepted            | Re-upload of the same `.txt` replaces, does not stack            |
+| D-016 | 2026-09-07 | Accepted            | Named-file retrieve + keep file chunks on web fallback           |
+| D-001 | 2026-09-06 | Accepted            | One Next.js TypeScript app, not FastAPI + Streamlit              |
+| D-002 | 2026-09-06 | Accepted            | LangGraph.js `StateGraph` for Adaptive RAG                       |
+| D-003 | 2026-09-06 | Accepted            | Three routes only: index, search, general                        |
+| D-004 | 2026-09-06 | Accepted            | Grade cannot search; rewrite budget is one                       |
+| D-005 | 2026-09-06 | Superseded by D-014 | `MemoryVectorStore` + `data/store.json`                          |
+| D-006 | 2026-09-06 | Accepted            | OpenAI + Tavily for v1, not Azure                                |
+| D-007 | 2026-09-06 | Superseded by D-015 | In-memory chat history by `sessionId`                            |
+| D-008 | 2026-09-06 | Accepted            | Eval measures router, not answer prose                           |
+| D-009 | 2026-09-06 | Accepted            | Graph node `classify` (state key stays `route`)                  |
+| D-010 | 2026-09-06 | Accepted            | `Annotation.Root` for graph state, Zod for structured output     |
+| D-011 | 2026-09-06 | Accepted            | `.txt` only; no PDF in v1                                        |
+| D-012 | 2026-09-06 | Superseded by D-021 | Seed from `data/sample/azure-ai.txt` when the store is empty     |
+| D-013 | 2026-09-07 | Accepted            | Product docs: `prd.md`, `tech-stack.md`, this log                |
+| D-014 | 2026-09-07 | Accepted            | Qdrant is the vector store                                       |
+| D-015 | 2026-09-07 | Accepted            | MongoDB persists sessions and full chat history                  |
 
 ---
 
@@ -46,11 +46,11 @@ Next ID: **D-028**.
 
 ### D-027: Auto peeks at the user's files before choosing web or model
 
-| | |
-| --- | --- |
-| Date | 2026-11-07 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-11-07 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** In Auto, the classifier saw only the question and a fixed list of sample topics. "Tell me about proctify" was answered from the model even though that name was in the user's upload. A second idea was to pass filenames and section titles into the classifier prompt.
 
@@ -64,11 +64,11 @@ Next ID: **D-028**.
 
 ### D-026: Accounts scope chats and uploads
 
-| | |
-| --- | --- |
-| Date | 2026-11-07 |
-| Status | Accepted |
-| Area | product |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-11-07 |
+| Status | Accepted   |
+| Area   | product    |
 
 **Context:** Browser `localStorage` ids (D-023, D-024, D-025) only hide data in one browser. Atlas and Qdrant Cloud still hold every visitor’s rows, and the client could send another id. The databases are the right place to separate users.
 
@@ -82,11 +82,11 @@ Next ID: **D-028**.
 
 ### D-025: Questions carry sessionId; retrieve cannot see another owner's files
 
-| | |
-| --- | --- |
-| Date | 2026-11-07 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-11-07 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** D-024 hid other people's files in the sidebar, but hybrid retrieve still searched the whole collection and filtered afterward. User A's question about a fact that only exists in User B's upload could still rank B's chunks first. Questions were stored by `sessionId` in MongoDB, but the graph did not carry that id.
 
@@ -100,11 +100,11 @@ Next ID: **D-028**.
 
 ### D-024: Uploads are scoped by a browser owner id
 
-| | |
-| --- | --- |
-| Date | 2026-11-07 |
-| Status | Accepted |
-| Area | product |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-11-07 |
+| Status | Accepted   |
+| Area   | product    |
 
 **Context:** Chat lists are privatish (D-023), but every Qdrant upload appeared in the sidebar and in hybrid retrieve. On Atlas + Qdrant Cloud that is a shared knowledge base. `data/uploads/` also cannot persist on Vercel.
 
@@ -118,11 +118,11 @@ Next ID: **D-028**.
 
 ### D-023: Sidebar lists only this browser's chats
 
-| | |
-| --- | --- |
-| Date | 2026-11-06 |
-| Status | Accepted |
-| Area | product |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-11-06 |
+| Status | Accepted   |
+| Area   | product    |
 
 **Context:** MongoDB holds every chat, and `GET /api/sessions` returned all of them. On a shared Atlas database that list is visible to every visitor. There is still no login.
 
@@ -136,15 +136,16 @@ Next ID: **D-028**.
 
 ### D-022: Answer modes, file lock, and provenance
 
-| | |
-| --- | --- |
-| Date | 2026-09-16 |
-| Status | Accepted |
-| Area | product |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-16 |
+| Status | Accepted   |
+| Area   | product    |
 
 **Context:** The three pipelines are real, but Auto still looks like ChatGPT: you type, it answers. The differentiator is control and provenance, not more path chips.
 
 **Decision:**
+
 - Composer control: **Auto** (existing classifier), **My files** (index only), **Web only** (Tavily, skip files).
 - Clicking a sidebar file locks retrieve to that filename (`lockedFile`). Click again to unlock. Delete/new chat clears the lock.
 - Every assistant turn shows a provenance banner: from your files / from the web / mixed / not from your files · model only. File answers also show a short quote from a chunk.
@@ -159,11 +160,11 @@ Next ID: **D-028**.
 
 ### D-021: 8 sample files, 60 eval cases, phrase + groundedness report
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | eval |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | eval       |
 
 **Context:** Ten cases were too small. Groundedness only counted claims and did not check required facts. Only `azure-ai.txt` was seeded.
 
@@ -177,11 +178,11 @@ Next ID: **D-028**.
 
 ### D-020: Optional Azure OpenAI client + CI for tsc and lint
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | stack |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | stack      |
 
 **Context:** I wanted Azure OpenAI as a switch, not a rewrite. I also wanted typecheck and lint on every push.
 
@@ -193,11 +194,11 @@ Next ID: **D-028**.
 
 ### D-019: Groundedness eval, citations, and hop metrics
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | eval |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | eval       |
 
 **Context:** Router accuracy alone does not catch an index answer that ignores the chunks. I also could not see how expensive a hop was.
 
@@ -209,11 +210,11 @@ Next ID: **D-028**.
 
 ### D-018: Hybrid retrieve and sidebar file list/delete
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** Vector-only search missed short files and exact names. I also had no way to see or remove what was indexed.
 
@@ -225,11 +226,11 @@ Next ID: **D-028**.
 
 ### D-017: Re-upload of the same `.txt` replaces, does not stack
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | product |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | product    |
 
 **Context:** Each Index click wrote `data/uploads/{timestamp}-{name}` and inserted new Qdrant points. `bodymeasurements.txt` appeared three times with the same content.
 
@@ -245,11 +246,11 @@ Next ID: **D-028**.
 
 ### D-016: Named-file retrieve + keep file chunks on web fallback
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** A user indexed `bodymeasurements.txt` and asked to summarise it plus San Francisco weather. Similarity search used the full mixed question, returned Azure sample chunks, graded them irrelevant, then web search replaced the document list. The model said it did not know the file.
 
@@ -265,11 +266,11 @@ Next ID: **D-028**.
 
 ### D-015: MongoDB persists sessions and full chat history
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | stack |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | stack      |
 
 **Context:** Refresh wiped chat. In-memory `Map` was not a session. Product now requires persistent history and conversation context.
 
@@ -285,11 +286,11 @@ Next ID: **D-028**.
 
 ### D-014: Qdrant is the vector store
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | stack |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | stack      |
 
 **Context:** Product requirement changed from in-process vectors to Qdrant, as in the Python Adaptive-Rag reference.
 
@@ -305,11 +306,11 @@ Next ID: **D-028**.
 
 ### D-013: Product docs live at repo root as PRD, tech stack, and this log
 
-| | |
-| --- | --- |
-| Date | 2026-09-07 |
-| Status | Accepted |
-| Area | docs |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-07 |
+| Status | Accepted   |
+| Area   | docs       |
 
 **Context:** The repo had architecture/requirements notes, but no single PRD, stack inventory, or append-only decision history.
 
@@ -325,11 +326,11 @@ Next ID: **D-028**.
 
 ### D-012: Seed the sample knowledge base when the store is empty
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
+|        |                     |
+| ------ | ------------------- |
+| Date   | 2026-09-06          |
 | Status | Superseded by D-021 |
-| Area | product |
+| Area   | product             |
 
 **Context:** A first run that requires a manual upload is a weak demo.
 
@@ -343,11 +344,11 @@ Next ID: **D-028**.
 
 ### D-011: Accept `.txt` uploads only
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | product |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | product    |
 
 **Context:** The Python reference uploads PDF. PDF parsing is a separate product.
 
@@ -361,11 +362,11 @@ Next ID: **D-028**.
 
 ### D-010: `Annotation.Root` for state; Zod for node outputs
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** LangGraph.js also offers `StateSchema` (Zod-native). Chat structured output already uses Zod 3.
 
@@ -381,11 +382,11 @@ Next ID: **D-028**.
 
 ### D-009: Name the router node `classify`
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** First compile failed: `route is already being used as a state attribute, cannot also be used as a node name.`
 
@@ -399,11 +400,11 @@ Next ID: **D-028**.
 
 ### D-008: Eval measures the router, not answer prose
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | eval |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | eval       |
 
 **Context:** Scoring free-text answers needs a judge model and is noisy.
 
@@ -417,11 +418,11 @@ Next ID: **D-028**.
 
 ### D-007: In-memory session history only
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | stack |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | stack      |
 
 **Context:** MongoDB chat history exists in the Python reference. Durable history is not required to prove Adaptive RAG.
 
@@ -435,11 +436,11 @@ Next ID: **D-028**.
 
 ### D-006: OpenAI + Tavily for v1, not Azure
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | stack |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | stack      |
 
 **Context:** Azure OpenAI would match an Azure AI fundamentals story. The first working build used the OpenAI API.
 
@@ -453,13 +454,13 @@ Next ID: **D-028**.
 
 ### D-005: MemoryVectorStore plus `data/store.json`
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | stack |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | stack      |
 
-**Context:** Qdrant matches the Python repo but needs extra infra. Process memory dies on refresh.
+**Context:** Qdrant needs extra infra. Process memory dies on refresh.
 
 **Decision:** In-process `MemoryVectorStore`. Persist `{ pageContent, metadata }` to `data/store.json` and rebuild embeddings when needed.
 
@@ -471,11 +472,11 @@ Next ID: **D-028**.
 
 ### D-004: Grade cannot search; rewrite budget is one
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** If the grader can search, it is no longer independent. Unlimited rewrite loops waste tokens.
 
@@ -489,11 +490,11 @@ Next ID: **D-028**.
 
 ### D-003: Three routes only (index, search, general)
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | product |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | product    |
 
 **Context:** Extra routes look like a bigger agent. They make eval fuzzy.
 
@@ -507,11 +508,11 @@ Next ID: **D-028**.
 
 ### D-002: LangGraph.js StateGraph for Adaptive RAG
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | graph |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | graph      |
 
 **Context:** Adaptive RAG is branching (route, grade, rewrite, fallback), not one prompt.
 
@@ -527,13 +528,13 @@ Next ID: **D-028**.
 
 ### D-001: One Next.js app instead of a split API and UI
 
-| | |
-| --- | --- |
-| Date | 2026-09-06 |
-| Status | Accepted |
-| Area | stack |
+|        |            |
+| ------ | ---------- |
+| Date   | 2026-09-06 |
+| Status | Accepted   |
+| Area   | stack      |
 
-**Context:** The Python reference uses FastAPI + Streamlit. TypeScript was a product constraint.
+**Context:** TypeScript as a product constraint.
 
 **Options:** Next.js App Router; Express/Hono API + separate frontend.
 
