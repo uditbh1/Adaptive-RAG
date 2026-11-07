@@ -38,7 +38,6 @@ Neither shows control. This app picks a path per question, checks retrieved text
 
 ## 4. Non-goals (v1)
 
-- Accounts or login. The chat list is the session ids stored in that browser, not every MongoDB session.
 - PDF / Office upload
 - Multi-agent roleplay
 - Production rate limits, billing, or packaging the Next.js app in Docker
@@ -50,8 +49,8 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 
 ### Happy path
 
-1. Open the app. Sample knowledge base (`data/sample/azure-ai.txt`) is indexed into Qdrant on first use. This browser's chats load from MongoDB using the session ids in `localStorage`.
-2. Optional: upload a `.txt`; it is chunked and indexed in Qdrant. The sidebar lists indexed files. Re-uploading the same name replaces the old copy.
+1. Sign up or sign in. The sample knowledge base is indexed into Qdrant on first use. This account’s chats load from MongoDB.
+2. Optional: upload a `.txt`; it is chunked and indexed in Qdrant for this account. The sidebar lists sample files plus this account’s uploads. Re-uploading the same name replaces that account’s copy.
 3. Optional: pick Auto, My files, or Web only. Click a sidebar file to lock answers to that file.
 4. Ask a question. Auto classification still picks **Index**, **General**, or **Search**. Forced modes skip the classifier.
 5. See a provenance banner (files / web / mixed / model), a short file quote when the answer came from docs, plus path chips, sources, and hop timing.
@@ -84,7 +83,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | --- | --- | --- |
 | Query router | Structured `index \| search \| general` | Eval cases hit expected route |
 | Document index | `.txt` upload, ~1000 / 150 chunking, Qdrant | Upload then ask a fact from that file |
-| File list / delete | Sidebar shows indexed files; uploads can be removed | Delete drops Qdrant points and the disk copy |
+| File list / delete | Sidebar shows sample files plus this browser’s uploads; uploads can be removed | Delete drops that owner’s Qdrant points (and the disk copy if present) |
 | Hybrid retrieve | Vector + keyword, RRF fuse | Filenames and rare tokens still match |
 | Relevance grade | Independent of search tools | Trace shows `grade=yes` or `grade=no` |
 | Rewrite budget | At most one rewrite | Trace never shows two `rewrite` hops |
@@ -96,7 +95,8 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | File lock | Click a sidebar file to retrieve that source only | Answers stay on that filename until unlocked |
 | Provenance | Banner + optional file quote on every assistant turn | User can tell files vs web vs model |
 | Path UI | Pipeline badge + `trace` chips | The graph is visible without logs |
-| Sessions | MongoDB messages. The browser stores the open session id and the list of its own session ids | Sidebar and refresh show only this browser's chats |
+| Accounts | Email and password. Session cookie. Chats and uploads stored by `userId` | Another account cannot list or retrieve them |
+| Sessions | MongoDB messages for the signed-in user. The open chat id may stay in `localStorage` | Sidebar and refresh show this account’s chats |
 | Eval | 10 router cases + index groundedness | `npm run eval` prints both scores |
 
 ## 7. Success metrics
@@ -116,7 +116,9 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 - Secrets: `.env.local` only
 - Models: OpenAI by default; Azure OpenAI if those env vars are set (`src/lib/llm.ts`)
 - Vectors: Qdrant
-- Chat: MongoDB by `sessionId`. The sidebar asks only for ids stored in this browser (no login)
+- Chat: MongoDB by `userId` and `sessionId`
+- Uploads: Qdrant points tagged with the signed-in `userId`
+- Auth: email, scrypt password hash, httpOnly session cookie
 
 ## 9. Milestones
 

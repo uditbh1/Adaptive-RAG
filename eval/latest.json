@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-09-07T17:11:35.008Z",
+  "generatedAt": "2026-11-07T11:21:04.467Z",
   "totals": {
     "cases": 60,
     "routerAccuracy": "60/60",
     "phraseChecks": "38/38",
-    "groundedness": "87/97",
+    "groundedness": "76/84",
     "byRoute": {
       "index": 38,
       "search": 12,
@@ -19,15 +19,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 3,
+      "groundedSupported": 2,
       "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2950
+      "ms": 2689
     },
     {
       "id": "index-hybrid-search",
@@ -36,15 +36,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 4,
+      "groundedSupported": 3,
       "groundedTotal": 5,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=5",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1773
+      "ms": 2466
     },
     {
       "id": "index-doc-intelligence",
@@ -54,14 +54,14 @@
       "phrasePass": true,
       "missingPhrases": [],
       "groundedSupported": 2,
-      "groundedTotal": 4,
+      "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 3061
+      "ms": 3007
     },
     {
       "id": "index-orchestrator",
@@ -70,15 +70,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 3,
-      "groundedTotal": 3,
+      "groundedSupported": 2,
+      "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2625
+      "ms": 2238
     },
     {
       "id": "index-content-safety",
@@ -87,15 +87,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 3,
-      "groundedTotal": 3,
+      "groundedSupported": 2,
+      "groundedTotal": 4,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=5",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1710
+      "ms": 1538
     },
     {
       "id": "index-product-name",
@@ -107,12 +107,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2530
+      "ms": 2049
     },
     {
       "id": "index-classify-node-name",
@@ -124,12 +124,12 @@
       "groundedSupported": 2,
       "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1900
+      "ms": 1705
     },
     {
       "id": "index-valid-routes",
@@ -138,15 +138,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 6,
-      "groundedTotal": 6,
+      "groundedSupported": 1,
+      "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2473
+      "ms": 2079
     },
     {
       "id": "index-run-adaptive-rag",
@@ -158,15 +158,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=4",
-        "grade=no",
-        "rewrite",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 4369
+      "ms": 2653
     },
     {
       "id": "index-qdrant-collection",
@@ -178,12 +175,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2271
+      "ms": 2063
     },
     {
       "id": "index-qdrant-url",
@@ -195,12 +192,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2039
+      "ms": 2431
     },
     {
       "id": "index-qdrant-distance",
@@ -212,12 +209,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2928
+      "ms": 2113
     },
     {
       "id": "index-rrf",
@@ -226,15 +223,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 5,
+      "groundedSupported": 4,
       "groundedTotal": 5,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2812
+      "ms": 3398
     },
     {
       "id": "index-named-file-first",
@@ -244,14 +241,14 @@
       "phrasePass": true,
       "missingPhrases": [],
       "groundedSupported": 2,
-      "groundedTotal": 5,
+      "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2676
+      "ms": 3278
     },
     {
       "id": "index-upload-replace",
@@ -260,15 +257,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 3,
-      "groundedTotal": 3,
+      "groundedSupported": 4,
+      "groundedTotal": 4,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2386
+      "ms": 2724
     },
     {
       "id": "index-mongo-uri",
@@ -280,12 +277,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1293
+      "ms": 943
     },
     {
       "id": "index-mongo-db-name",
@@ -297,12 +294,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1092
+      "ms": 802
     },
     {
       "id": "index-mongo-collections",
@@ -312,14 +309,14 @@
       "phrasePass": true,
       "missingPhrases": [],
       "groundedSupported": 3,
-      "groundedTotal": 4,
+      "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2699
+      "ms": 2652
     },
     {
       "id": "index-session-storage-key",
@@ -331,12 +328,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1322
+      "ms": 703
     },
     {
       "id": "index-history-window",
@@ -348,12 +345,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1390
+      "ms": 1007
     },
     {
       "id": "index-session-title",
@@ -365,12 +362,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1579
+      "ms": 1244
     },
     {
       "id": "index-tavily-key",
@@ -382,12 +379,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2582
+      "ms": 2611
     },
     {
       "id": "index-tavily-max-results",
@@ -399,12 +396,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2233
+      "ms": 2252
     },
     {
       "id": "index-tavily-missing-key",
@@ -413,15 +410,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 3,
-      "groundedTotal": 4,
+      "groundedSupported": 2,
+      "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2224
+      "ms": 2648
     },
     {
       "id": "index-kept-docs",
@@ -433,12 +430,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2424
+      "ms": 3184
     },
     {
       "id": "index-grade-readonly",
@@ -450,12 +447,12 @@
       "groundedSupported": 4,
       "groundedTotal": 4,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2651
+      "ms": 2926
     },
     {
       "id": "index-two-rewrites",
@@ -464,15 +461,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 4,
-      "groundedTotal": 4,
+      "groundedSupported": 3,
+      "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2480
+      "ms": 2827
     },
     {
       "id": "index-eval-command",
@@ -484,12 +481,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=3",
+        "peek=3",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1474
+      "ms": 956
     },
     {
       "id": "index-chat-model",
@@ -501,12 +498,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1577
+      "ms": 727
     },
     {
       "id": "index-embedding-model",
@@ -518,12 +515,12 @@
       "groundedSupported": 3,
       "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2308
+      "ms": 2740
     },
     {
       "id": "index-chunk-size",
@@ -532,15 +529,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 3,
-      "groundedTotal": 3,
+      "groundedSupported": 1,
+      "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2522
+      "ms": 2085
     },
     {
       "id": "index-txt-only",
@@ -552,12 +549,12 @@
       "groundedSupported": 3,
       "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2630
+      "ms": 2604
     },
     {
       "id": "index-azure-optional",
@@ -569,12 +566,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=1",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1439
+      "ms": 832
     },
     {
       "id": "index-no-login",
@@ -583,15 +580,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 1,
+      "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=3",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1412
+      "ms": 1257
     },
     {
       "id": "index-docker-ports",
@@ -600,15 +597,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 2,
-      "groundedTotal": 2,
+      "groundedSupported": 1,
+      "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2178
+      "ms": 2435
     },
     {
       "id": "index-api-sources",
@@ -617,15 +614,15 @@
       "routePass": true,
       "phrasePass": true,
       "missingPhrases": [],
-      "groundedSupported": 1,
-      "groundedTotal": 1,
+      "groundedSupported": 3,
+      "groundedTotal": 3,
       "trace": [
-        "route=index",
-        "retrieve=4",
+        "peek=4",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 2511
+      "ms": 2201
     },
     {
       "id": "index-ci-commands",
@@ -637,12 +634,12 @@
       "groundedSupported": 2,
       "groundedTotal": 2,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=3",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1418
+      "ms": 1285
     },
     {
       "id": "index-three-routes",
@@ -654,12 +651,12 @@
       "groundedSupported": 1,
       "groundedTotal": 1,
       "trace": [
-        "route=index",
-        "retrieve=1",
+        "peek=3",
         "grade=yes",
+        "route=index",
         "generate"
       ],
-      "ms": 1811
+      "ms": 1631
     },
     {
       "id": "search-champions-league",
@@ -671,11 +668,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 2150
+      "ms": 3231
     },
     {
       "id": "search-weather-london",
@@ -687,11 +686,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 2091
+      "ms": 4348
     },
     {
       "id": "search-headline",
@@ -703,11 +704,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 4105
+      "ms": 5036
     },
     {
       "id": "search-weather-tokyo",
@@ -719,11 +722,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 1778
+      "ms": 3496
     },
     {
       "id": "search-weather-sf",
@@ -735,11 +740,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 1751
+      "ms": 2891
     },
     {
       "id": "search-bitcoin",
@@ -751,11 +758,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 1706
+      "ms": 2055
     },
     {
       "id": "search-super-bowl",
@@ -767,11 +776,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 1685
+      "ms": 3424
     },
     {
       "id": "search-fx-usd-gbp",
@@ -783,11 +794,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 2327
+      "ms": 5043
     },
     {
       "id": "search-apple-stock",
@@ -799,11 +812,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 1967
+      "ms": 4213
     },
     {
       "id": "search-premier-league",
@@ -815,11 +830,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 3925
+      "ms": 3262
     },
     {
       "id": "search-spacex",
@@ -831,11 +848,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 3491
+      "ms": 3255
     },
     {
       "id": "search-un-secretary",
@@ -847,11 +866,13 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=search",
         "webSearch=4",
         "generate"
       ],
-      "ms": 1774
+      "ms": 2502
     },
     {
       "id": "general-hello",
@@ -863,10 +884,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1346
+      "ms": 3110
     },
     {
       "id": "general-math",
@@ -878,10 +901,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1123
+      "ms": 2557
     },
     {
       "id": "general-thanks",
@@ -893,10 +918,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1130
+      "ms": 2732
     },
     {
       "id": "general-good-morning",
@@ -908,10 +935,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1353
+      "ms": 2259
     },
     {
       "id": "general-subtract",
@@ -923,10 +952,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1128
+      "ms": 2688
     },
     {
       "id": "general-multiply",
@@ -938,10 +969,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1142
+      "ms": 2645
     },
     {
       "id": "general-divide",
@@ -953,10 +986,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1209
+      "ms": 2568
     },
     {
       "id": "general-spell-cat",
@@ -968,10 +1003,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1119
+      "ms": 2664
     },
     {
       "id": "general-feet-inches",
@@ -983,10 +1020,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1368
+      "ms": 2817
     },
     {
       "id": "general-percent",
@@ -998,10 +1037,12 @@
       "groundedSupported": 0,
       "groundedTotal": 0,
       "trace": [
+        "peek=4",
+        "grade=no",
         "route=general",
         "general"
       ],
-      "ms": 1269
+      "ms": 2581
     }
   ]
 }

@@ -2,7 +2,8 @@
 
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, CircleAlert, FileText, FileUp, Globe, Menu, MessageSquarePlus, PanelLeft, Send, Sparkles, Trash2, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, FileText, FileUp, Globe, LogOut, Menu, MessageSquarePlus, PanelLeft, Send, Sparkles, Trash2, X } from "lucide-react";
+import { AuthScreen } from "@/components/auth-screen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -50,29 +51,16 @@ type Conversation = {
 };
 
 const SESSION_KEY = "adaptive-rag-session";
-const SESSION_LIST_KEY = "adaptive-rag-sessions";
-const MAX_LOCAL_SESSIONS = 50;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function readKnownSessionIds(): string[] {
-  try {
-    const raw = window.localStorage.getItem(SESSION_LIST_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
-      .map((id) => id.trim())
-      .slice(0, MAX_LOCAL_SESSIONS);
-  } catch {
-    return [];
-  }
-}
+type AuthUser = { id: string; email: string };
 
-function rememberSessionId(id: string) {
-  const ids = [id, ...readKnownSessionIds().filter((item) => item !== id)].slice(
-    0,
-    MAX_LOCAL_SESSIONS,
-  );
-  window.localStorage.setItem(SESSION_LIST_KEY, JSON.stringify(ids));
+function openChatId() {
+  const existing = window.localStorage.getItem(SESSION_KEY)?.trim() ?? "";
+  const id = UUID_RE.test(existing) ? existing : crypto.randomUUID();
+  window.localStorage.setItem(SESSION_KEY, id);
+  return id;
 }
 
 const SUGGESTIONS = [
@@ -141,6 +129,8 @@ function chipTone(step: string) {
 }
 
 export default function HomePage() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -167,8 +157,13 @@ export default function HomePage() {
   }
 
   const loadIndexedFiles = useCallback(async () => {
+    if (!user) return;
     try {
       const res = await fetch("/api/sources");
+      if (res.status === 401) {
+        setUser(null);
+        return;
+      }
       const data = (await res.json()) as { files?: IndexedFile[] };
       if (Array.isArray(data.files)) {
         setIndexedFiles(data.files);
@@ -176,15 +171,16 @@ export default function HomePage() {
     } catch {
       // keep last list
     }
-  }, []);
+  }, [user]);
 
   const loadConversations = useCallback(async () => {
+    if (!user) return;
     try {
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionIds: readKnownSessionIds() }),
-      });
+      const res = await fetch("/api/sessions");
+      if (res.status === 401) {
+        setUser(null);
+        return;
+      }
       const data = (await res.json()) as { sessions?: Conversation[] };
       if (Array.isArray(data.sessions)) {
         setConversations(data.sessions);
@@ -192,14 +188,21 @@ export default function HomePage() {
     } catch {
       // surfaced by query load
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    const existing = window.localStorage.getItem(SESSION_KEY);
-    const id = existing ?? crypto.randomUUID();
-    window.localStorage.setItem(SESSION_KEY, id);
-    rememberSessionId(id);
-    setSessionId(id);
+    void fetch("/api/auth/me")
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return (await res.json()) as AuthUser;
+      })
+      .then((account) => {
+        if (account?.id && account.email) {
+          setUser(account);
+          setSessionId(openChatId());
+        }
+      })
+      .finally(() => setAuthReady(true));
   }, []);
 
   useEffect(() => {
@@ -214,8 +217,28 @@ export default function HomePage() {
   useEffect(() => {
     if (!sessionId) return;
     void fetch(`/api/query?sessionId=${sessionId}`)
-      .then((res) => res.json())
-      .then((data: { history?: Message[]; chunksIndexed?: number; error?: string }) => {
+      .then(async (res) => {
+        if (res.status === 401) {
+          setUser(null);
+          return null;
+        }
+        const data = (await res.json()) as {
+          history?: Message[];
+          chunksIndexed?: number;
+          error?: string;
+        };
+        if (res.status === 404) {
+          const id = crypto.randomUUID();
+          window.localStorage.setItem(SESSION_KEY, id);
+          setSessionId(id);
+          setMessages([]);
+          setStatus("New chat");
+          return null;
+        }
+        return data;
+      })
+      .then((data) => {
+        if (!data) return;
         if (data.error) {
           setStatus(data.error);
           return;
@@ -249,8 +272,27 @@ export default function HomePage() {
 
   function openConversation(id: string) {
     window.localStorage.setItem(SESSION_KEY, id);
-    rememberSessionId(id);
     setSessionId(id);
+    setQuestion("");
+  }
+
+  function signIn(account: AuthUser) {
+    setUser(account);
+    setMessages([]);
+    setConversations([]);
+    setIndexedFiles([]);
+    setSessionId(openChatId());
+    setStatus("Signed in");
+  }
+
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.localStorage.removeItem(SESSION_KEY);
+    setUser(null);
+    setSessionId(null);
+    setMessages([]);
+    setConversations([]);
+    setIndexedFiles([]);
     setQuestion("");
   }
 
@@ -310,7 +352,6 @@ export default function HomePage() {
   function startNewConversation() {
     const id = crypto.randomUUID();
     window.localStorage.setItem(SESSION_KEY, id);
-    rememberSessionId(id);
     setSessionId(id);
     setMessages([]);
     setQuestion("");
@@ -320,6 +361,10 @@ export default function HomePage() {
   }
 
   async function onUpload(file: File) {
+    if (!user) {
+      showToast("error", "Sign in to index a file.");
+      return;
+    }
     if (!file.name.toLowerCase().endsWith(".txt")) {
       showToast("error", "Only .txt files can be indexed.");
       return;
@@ -329,6 +374,7 @@ export default function HomePage() {
     try {
       const body = new FormData();
       body.append("file", file);
+      if (sessionId) body.append("sessionId", sessionId);
       const res = await fetch("/api/upload", { method: "POST", body });
       const data = (await res.json()) as {
         error?: string;
@@ -388,6 +434,10 @@ export default function HomePage() {
         metrics?: HopMetric[];
         provenance?: Provenance;
       };
+      if (res.status === 401) {
+        setUser(null);
+        return;
+      }
       if (!res.ok) {
         setStatus(data.error ?? "Query failed");
         setMessages((current) => [
@@ -429,6 +479,18 @@ export default function HomePage() {
       event.preventDefault();
       void send(question);
     }
+  }
+
+  if (!authReady) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-background text-sm text-muted-foreground">
+        Connecting…
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen onSuccess={signIn} />;
   }
 
   return (
@@ -496,7 +558,7 @@ export default function HomePage() {
               </p>
               {indexedFiles.length === 0 ? (
                 <p className="px-2 text-xs text-muted-foreground">
-                  Upload a .txt to add it here.
+                  Sample files are shared. Your uploads stay on this account.
                 </p>
               ) : (
                 <ul className="space-y-1">
@@ -547,10 +609,23 @@ export default function HomePage() {
               )}
               {indexedFiles.length > 0 ? (
                 <p className="mt-2 px-2 text-[11px] text-muted-foreground">
-                  Click a file to lock answers to it.
+                  Click a file to lock answers to it. Uploads belong to this
+                  account.
                 </p>
               ) : null}
             </ScrollArea>
+            <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-3">
+              <p className="min-w-0 truncate text-xs text-muted-foreground">{user.email}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="iconSm"
+                aria-label="Sign out"
+                onClick={() => void signOut()}
+              >
+                <LogOut className="size-4" />
+              </Button>
+            </div>
           </motion.aside>
         ) : null}
       </AnimatePresence>
@@ -584,7 +659,7 @@ export default function HomePage() {
               type="button"
               variant="outline"
               size="sm"
-              disabled={busy}
+              disabled={busy || !user}
               onClick={() => fileRef.current?.click()}
             >
               <FileUp className="size-4" />

@@ -25,6 +25,7 @@ const workflow = new StateGraph(GraphState)
     retrieve: "retrieve",
     webSearch: "webSearch",
     generalLlm: "generalLlm",
+    generate: "generate",
   })
   .addEdge("retrieve", "grade")
   .addConditionalEdges("grade", afterGrade, {
@@ -55,10 +56,12 @@ export type AdaptiveRagResult = {
 export async function runAdaptiveRag(
   question: string,
   history = "",
-  options?: { mode?: AnswerMode; lockedFile?: string },
+  options?: { mode?: AnswerMode; lockedFile?: string; userId?: string; sessionId?: string },
 ): Promise<AdaptiveRagResult> {
   const answerMode = options?.mode ?? "auto";
   const lockedFile = options?.lockedFile?.trim() ?? "";
+  const userId = options?.userId?.trim() ?? "";
+  const sessionId = options?.sessionId?.trim() ?? "";
   const state = await adaptiveRagGraph.invoke({
     question,
     originalQuestion: question,
@@ -73,6 +76,8 @@ export async function runAdaptiveRag(
     metrics: [],
     answerMode,
     lockedFile,
+    userId,
+    sessionId,
   });
 
   return {

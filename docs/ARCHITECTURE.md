@@ -11,16 +11,13 @@ Browser (src/app/page.tsx)
 API routes (Node runtime)
     |  MongoDB history     Qdrant retrieve
     v
-runAdaptiveRag(question, history, { mode, lockedFile })
+runAdaptiveRag(question, history, { mode, lockedFile, userId, sessionId })
     v
-StateGraph: classify -> retrieve | webSearch | generalLlm
-                 |         |
-                 v         v
-               grade    generate
-                 |
-        relevant? --yes--> generate (or webSearch if Auto and the question also needs live facts)
-                 |
-        rewrite once, else webSearch -> generate (My files: generate/refuse, no web)
+StateGraph: classify peeks Qdrant on Auto
+                 |-- relevant chunks --> generate (or webSearch if the question also needs live facts)
+                 |-- not relevant --> webSearch | generalLlm
+My files: classify -> retrieve -> grade -> generate
+Web only: classify -> webSearch -> generate
 ```
 
 The classify **node** is named `classify` because LangGraph will not allow a node name that matches a state key (`route`).
@@ -29,7 +26,7 @@ The classify **node** is named `classify` because LangGraph will not allow a nod
 
 | Type | When | Pipeline |
 | --- | --- | --- |
-| **Index** | Answer is in uploaded / sample documents | hybrid retrieve (filename first, else vector+keyword) → grade → (rewrite once) → generate. Mixed file + live questions keep file chunks and also web-search. |
+| **Index** | Answer is in uploaded / sample documents | On Auto, a hybrid peek of this account's files plus samples is graded. A useful peek answers from those chunks. My files still uses hybrid retrieve, then grade, then one rewrite. |
 | **General** | Greeting, math, common knowledge | `generalLlm` only |
 | **Search** | Live / current-world facts | Tavily → generate |
 | **My files** (mode) | User forced documents | skip classify LLM; retrieve (or `lockedFile`); never Tavily; refuse if chunks cannot answer |
@@ -56,6 +53,8 @@ Defined in [`src/lib/graph/state.ts`](../src/lib/graph/state.ts):
 | `trace` | Append-only hop labels for the UI |
 | `answerMode` | `auto` \| `files` \| `web` |
 | `lockedFile` | Optional filename for retrieve |
+| `userId` | Signed-in account; Qdrant retrieve only samples + this user |
+| `sessionId` | This account’s chat; Mongo history is this id only |
 | `provenance` | Banner kind, file/web sources, optional quote |
 
 Provenance is built in [`src/lib/graph/provenance.ts`](../src/lib/graph/provenance.ts).
@@ -64,34 +63,44 @@ Provenance is built in [`src/lib/graph/provenance.ts`](../src/lib/graph/provenan
 
 Sample knowledge base: every `.txt` in [`data/sample/`](../data/sample/) is seeded if that filename is not already in Qdrant.
 
+**POST `/api/auth/signup`** and **POST `/api/auth/login`**  
+JSON `{ email, password }`. Creates or checks the MongoDB user, sets an httpOnly cookie.
+
+**POST `/api/auth/logout`**  
+Deletes the auth session and clears the cookie.
+
+**GET `/api/auth/me`**  
+Returns `{ id, email }` for the cookie, or 401.
+
 **POST `/api/upload`**  
-Form field `file`. `.txt` only. Chunk, embed, upsert into Qdrant. Same name replaces.
+Cookie plus form fields `file` and optional `sessionId`. `.txt` only. Chunk, embed, upsert into Qdrant with that `userId`. Same name replaces that account’s copy.
 
 **GET `/api/sources`**  
-List indexed files (name, origin, chunk count).
+Sample files plus this account’s uploads (name, origin, chunk count).
 
 **DELETE `/api/sources`**  
-JSON `{ filename }`. Removes an upload from Qdrant and `data/uploads/`. Sample file is blocked.
+JSON `{ filename }`. Removes that account’s upload from Qdrant and `data/uploads/{userId}/` if present. Sample file is blocked.
 
 **POST `/api/query`**  
-JSON `{ query, sessionId, mode?, lockedFile? }`. `mode` is `auto` (default), `files`, or `web`. Loads history from MongoDB, runs the graph, appends both turns. Returns answer, route, trace, sources, metrics, provenance, history.
+Cookie plus JSON `{ query, sessionId, mode?, lockedFile? }`. `mode` is `auto` (default), `files`, or `web`. The chat must belong to this account. Qdrant retrieve is sample files plus this `userId`. Returns answer, route, trace, sources, metrics, provenance, history.
 
 **GET `/api/query?sessionId=`**  
-Full session history and Qdrant chunk count.
+That account’s session history and visible chunk count.
 
-**POST `/api/sessions`**  
-JSON `{ sessionIds }`. Returns title, time, and message count for those ids only. Unknown ids and empty sessions are omitted. There is no list-all endpoint.
+**GET `/api/sessions`**  
+Title, time, and message count for this account’s chats. Empty sessions are omitted.
 
 ## Persistence
 
 | Data | Where | Survives refresh? | Survives server restart? |
 | --- | --- | --- | --- |
-| Chat | MongoDB `messages` | Yes (same `sessionId` in `localStorage`) | Yes |
-| Session metadata | MongoDB `sessions` | Yes | Yes |
+| Account | MongoDB `users` | Yes | Yes |
+| Auth session | MongoDB `authSessions` + httpOnly cookie | Yes, until logout or 30 days | Yes |
+| Chat | MongoDB `messages` by `userId` | Yes | Yes |
+| Session metadata | MongoDB `sessions` by `userId` | Yes | Yes |
 | Open chat id | `localStorage` key `adaptive-rag-session` | Yes, this browser | No |
-| Known chat ids | `localStorage` key `adaptive-rag-sessions` | Yes, this browser | No |
-| Vectors | Qdrant collection | Yes | Yes |
-| Raw uploads | `data/uploads/{filename}` (one file per name) | Yes | Yes |
+| Vectors | Qdrant collection (uploads tagged with `userId`) | Yes | Yes |
+| Raw uploads | `data/uploads/{userId}/{filename}` when the app disk is writable | Local yes; Vercel no | Local yes |
 
 ## Key files
 

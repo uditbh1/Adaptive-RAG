@@ -58,12 +58,13 @@ The classify **node** is named `classify`. The state field is `route`. LangGraph
 | Vector store | `@langchain/qdrant` `QdrantVectorStore` | Document embeddings |
 | Qdrant client | `@qdrant/js-client-rest` | Collection, text index, keyword scroll |
 | Hybrid | vector + `content` text match, RRF | Default retrieve when no filename is named |
-| Uploads | `data/uploads/` | One `.txt` per filename |
+| Uploads | `data/uploads/{userId}/` when writable; Qdrant `userId` metadata | One `.txt` per filename per account |
+| Auth | MongoDB `users` + `authSessions`, httpOnly cookie | Email and scrypt password |
 | Sample corpus | `data/sample/azure-ai.txt` | Seed if Qdrant collection is empty |
 | Web search | `@langchain/tavily` `TavilySearch` | `search` path and index fallback |
 | Chat DB | `mongodb` | `sessions` + `messages` collections |
 
-Not in v1: PDF parsers, Azure AI Search, login.
+Not in v1: PDF parsers, Azure AI Search, email verification, password reset.
 
 ## Eval and tooling
 

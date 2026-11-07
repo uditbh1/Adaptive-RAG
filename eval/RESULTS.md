@@ -1,6 +1,6 @@
 # Eval results
 
-Generated: 2026-09-07T17:11:35.008Z
+Generated: 2026-11-07T11:21:04.467Z
 
 ## Scores
 
@@ -9,7 +9,7 @@ Generated: 2026-09-07T17:11:35.008Z
 | Cases | 60 |
 | Router accuracy | 60/60 |
 | Phrase checks (index mustContain) | 38/38 |
-| Groundedness (supported claims) | 87/97 |
+| Groundedness (supported claims) | 76/84 |
 
 ## Case mix
 

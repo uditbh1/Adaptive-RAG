@@ -4,7 +4,7 @@ I keep architecture choices here so I do not lose the why. Old entries stay. If 
 
 Product: [prd.md](prd.md). Stack: [tech-stack.md](tech-stack.md). Graph: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). [`docs/DECISIONS.md`](docs/DECISIONS.md) only points here.
 
-Next ID: **D-024**.
+Next ID: **D-028**.
 
 ---
 
@@ -12,7 +12,11 @@ Next ID: **D-024**.
 
 | ID | Date | Status | Decision |
 | --- | --- | --- | --- |
-| D-023 | 2026-11-06 | Accepted | Sidebar lists only session ids stored in this browser |
+| D-027 | 2026-11-07 | Accepted | Auto peeks at this user's files before web or model |
+| D-026 | 2026-11-07 | Accepted | Signup/login; chats and uploads scoped by Mongo user id |
+| D-025 | 2026-11-07 | Superseded by D-026 | Questions carry sessionId; retrieve filters Qdrant by owner |
+| D-024 | 2026-11-07 | Superseded by D-026 | Uploads are scoped by a browser owner id, like chats |
+| D-023 | 2026-11-06 | Superseded by D-026 | Sidebar lists only session ids stored in this browser |
 | D-022 | 2026-09-16 | Accepted | Answer modes Auto / My files / Web, file lock, provenance banner |
 | D-021 | 2026-09-07 | Accepted | 8 sample files, 60 eval cases, phrase + groundedness report |
 | D-020 | 2026-09-07 | Accepted | Optional Azure OpenAI client + CI for tsc and lint |
@@ -39,6 +43,78 @@ Next ID: **D-024**.
 ---
 
 ## Entries
+
+### D-027: Auto peeks at the user's files before choosing web or model
+
+| | |
+| --- | --- |
+| Date | 2026-11-07 |
+| Status | Accepted |
+| Area | graph |
+
+**Context:** In Auto, the classifier saw only the question and a fixed list of sample topics. "Tell me about proctify" was answered from the model even though that name was in the user's upload. A second idea was to pass filenames and section titles into the classifier prompt.
+
+**Decision:** On Auto, run the same hybrid search used for retrieval (vector plus keyword) over sample files plus this account's chunks. Keyword hits are ranked by distinctive words, including identifiers such as function names, so a rare term is not crowded out by common words. Grade those chunks with the existing relevance check. If they state the asked fact, the route is `index` and those chunks are the context (web is added only when the question also needs a live fact). If they are not useful, the classifier chooses `search` or `general` and does not open the index again. My files and Web only are unchanged. Eval stays on Auto with no user id, so the peek sees sample files only.
+
+**Why not the catalog:** A table of contents only helps when the name is a heading the extractor kept. A fact that sits in a paragraph, or a heading the extractor missed, never reaches the router, and the catalog has to be rebuilt whenever the file changes. The peek uses the same chunks retrieval would use, so the text that can answer the question is the text that decides the route. Proctify is in the body of a later chunk, not in the Adaptive RAG chunk the user was looking at.
+
+**Follow-up:** One embedding search plus one grade call on every Auto question. No second title index.
+
+---
+
+### D-026: Accounts scope chats and uploads
+
+| | |
+| --- | --- |
+| Date | 2026-11-07 |
+| Status | Accepted |
+| Area | product |
+
+**Context:** Browser `localStorage` ids (D-023, D-024, D-025) only hide data in one browser. Atlas and Qdrant Cloud still hold every visitor’s rows, and the client could send another id. The databases are the right place to separate users.
+
+**Decision:** Email and a scrypt password hash live in MongoDB `users`. A random session token is stored hashed in `authSessions` and sent as an httpOnly cookie (`adaptive-rag-auth`). Signup, login, logout, and `/api/auth/me` manage it. Query, upload, sources, and the chat list require that cookie. The server reads `userId` from the cookie, never from the request body. Chat sessions and messages are stored with that `userId`. `GET /api/sessions` returns that account’s chats. Qdrant upload points store `userId`, and retrieve filters to sample files plus that user. Eval still passes no user id, so it only sees sample files.
+
+**Why:** Signing in is the boundary. Another account cannot list, delete, or retrieve these chats and files by guessing an id.
+
+**Follow-up:** Supersedes D-023, D-024, and D-025. Chats and uploads created before accounts stay in the databases and do not attach to a new user; re-upload files after signing in. The sample corpus still says there is no login, so `index-no-login` eval is unchanged. Not a full auth product: no email verification, password reset, or rate limits.
+
+---
+
+### D-025: Questions carry sessionId; retrieve cannot see another owner's files
+
+| | |
+| --- | --- |
+| Date | 2026-11-07 |
+| Status | Accepted |
+| Area | graph |
+
+**Context:** D-024 hid other people's files in the sidebar, but hybrid retrieve still searched the whole collection and filtered afterward. User A's question about a fact that only exists in User B's upload could still rank B's chunks first. Questions were stored by `sessionId` in MongoDB, but the graph did not carry that id.
+
+**Decision:** Every query sends `sessionId` into graph state and onto the MongoDB turn (`ownerId` too). History is only that session. Vector and keyword retrieve use a Qdrant filter: sample files, or points whose `ownerId` matches the asking browser. User B's chunks are not returned, graded, or cited. Uploads also store the `sessionId` of the chat that indexed them. Eval still omits `ownerId` / `sessionId` and sees sample files only.
+
+**Why:** Isolation has to happen at retrieve, not only in the file list. Tagging the question with the session id keeps chat context and file access on the same request.
+
+**Follow-up:** Tightens D-024. Still not login.
+
+---
+
+### D-024: Uploads are scoped by a browser owner id
+
+| | |
+| --- | --- |
+| Date | 2026-11-07 |
+| Status | Accepted |
+| Area | product |
+
+**Context:** Chat lists are privatish (D-023), but every Qdrant upload appeared in the sidebar and in hybrid retrieve. On Atlas + Qdrant Cloud that is a shared knowledge base. `data/uploads/` also cannot persist on Vercel.
+
+**Decision:** The browser stores `adaptive-rag-owner` (a UUID) in `localStorage`. Upload / list / delete / retrieve send that id. Qdrant points keep `ownerId` in metadata. The sidebar shows sample files plus this owner’s uploads. Retrieve and named-file lock only search those. Same filename from two browsers are separate points. Disk copies go to `data/uploads/{ownerId}/` when the filesystem allows; a failed disk write does not block indexing. `npm run eval` does not send an owner id, so it only sees sample files.
+
+**Why:** Same strength as chat ids: this browser’s files, not login. Hiding names in the sidebar is not enough if retrieve still returns other people’s chunks.
+
+**Follow-up:** Uploads without `ownerId` stay in Qdrant but are not listed or retrieved. Re-upload from this browser to claim them. Not multi-tenant isolation.
+
+---
 
 ### D-023: Sidebar lists only this browser's chats
 

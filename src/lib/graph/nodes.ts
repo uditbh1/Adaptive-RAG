@@ -1,19 +1,10 @@
 import { z } from "zod";
 import { TavilySearch } from "@langchain/tavily";
 import { getChatModel } from "../llm";
-import { matchSources, retrieveDocuments } from "../rag/store";
+import { matchSources, peekDocuments, retrieveDocuments } from "../rag/store";
 import { timeHop, tokensFromMessage } from "./observe";
 import { buildProvenance } from "./provenance";
 import type { AnswerMode, GraphStateType, RetrievedDoc, Route } from "./state";
-
-const routeSchema = z.object({
-  route: z
-    .enum(["index", "search", "general"])
-    .describe(
-      "index = uploaded / knowledge-base documents; search = live web facts; general = greetings, math, or common knowledge",
-    ),
-  reason: z.string().describe("One short sentence explaining the choice"),
-});
 
 const gradeSchema = z.object({
   relevant: z
@@ -24,6 +15,15 @@ const gradeSchema = z.object({
 
 const rewriteSchema = z.object({
   query: z.string().describe("A clearer search query for the same user question"),
+});
+
+const fallbackRouteSchema = z.object({
+  route: z
+    .enum(["search", "general"])
+    .describe(
+      "search = live web facts; general = greetings, math, or common knowledge. The files were already checked.",
+    ),
+  reason: z.string().describe("One short sentence explaining the choice"),
 });
 
 function formatDocs(docs: RetrievedDoc[]) {
@@ -39,7 +39,7 @@ function formatDocs(docs: RetrievedDoc[]) {
 }
 
 function needsLiveWeb(question: string) {
-  return /\b(weather|temperature|forecast|who won|headline|news|price|stock|today|tonight|this week|latest)\b/i.test(
+  return /\b(weather|temperature|forecast|who won|who is the current|headline|news|price|stock|today|tonight|this week|latest)\b/i.test(
     question,
   );
 }
@@ -57,6 +57,35 @@ function formatHistoryBlock(history: string) {
     return "No prior conversation.";
   }
   return history;
+}
+
+async function gradeChunks(question: string, documents: RetrievedDoc[]) {
+  if (documents.length === 0) {
+    return { relevant: false, metrics: [{ name: "grade", ms: 0 }] };
+  }
+  const namedHit =
+    matchSources(
+      question,
+      documents.map((doc) => String(doc.metadata.source ?? "")).filter(Boolean),
+    ).length > 0;
+  if (namedHit) {
+    return { relevant: true, metrics: [{ name: "grade", ms: 0 }] };
+  }
+  const { result, metrics } = await timeHop("grade", async () => {
+    const llm = getChatModel().withStructuredOutput(gradeSchema);
+    return llm.invoke([
+      {
+        role: "system",
+        content:
+          "relevant=true when at least one chunk states the fact the question asks for, including a yes/no rule such as cannot or never. Chunks that only share the project name do not count. Missing live-web facts such as weather or news do not make a useful file chunk irrelevant. Greetings, thanks, and small talk are not document questions: relevant=false. If every chunk is off-topic or empty, relevant=false.",
+      },
+      {
+        role: "user",
+        content: `Question: ${question}\n\nChunks:\n${formatDocs(documents)}`,
+      },
+    ]);
+  });
+  return { relevant: result.relevant, metrics };
 }
 
 export async function routeNode(state: GraphStateType) {
@@ -77,17 +106,41 @@ export async function routeNode(state: GraphStateType) {
     };
   }
 
+  const asked = state.originalQuestion || state.question;
+  const { result: peeked, metrics: peekMetrics } = await timeHop("peek", () =>
+    peekDocuments(asked, state.userId || "", 4),
+  );
+  const graded = await gradeChunks(asked, peeked);
+  if (graded.relevant) {
+    return {
+      route: "index" as Route,
+      documents: peeked,
+      relevant: true,
+      trace: [`peek=${peeked.length}`, "grade=yes", "route=index"],
+      metrics: [...peekMetrics, ...graded.metrics],
+    };
+  }
+
+  if (needsLiveWeb(asked)) {
+    return {
+      route: "search" as Route,
+      documents: [],
+      relevant: false,
+      trace: [`peek=${peeked.length}`, "grade=no", "route=search"],
+      metrics: [...peekMetrics, ...graded.metrics],
+    };
+  }
+
   const { result, metrics } = await timeHop("classify", async () => {
-    const llm = getChatModel().withStructuredOutput(routeSchema);
+    const llm = getChatModel().withStructuredOutput(fallbackRouteSchema);
     return llm.invoke([
       {
         role: "system",
-        content: `You are the Adaptive Classification router. Pick exactly one processing pipeline:
-- index: the question can be answered from uploaded documents or the project knowledge base (Adaptive RAG, rewrite budget, Azure AI Search, Azure OpenAI, Document Intelligence, Content Safety, groundedness, LangGraph.js, Qdrant, MongoDB sessions, Tavily, chunk size, gpt-4o-mini, product scope, API routes, CI). Also use index for follow-ups that still refer to those documents.
-- search: the question needs real-time web facts (news, scores, today's weather, prices, "who won last...").
+        content: `You are the Adaptive Classification router. The user's files and the sample knowledge base were already searched, and those chunks are not useful for this question. Pick exactly one pipeline:
+- search: the question needs real-time or current-world facts (news, scores, today's weather, prices, "who won", "who is the current" office-holder).
 - general: greetings, small talk, simple math, or evergreen common knowledge that does not need files or the live web.
 
-Use the conversation history to resolve short follow-ups like "what about hybrid search?" or "and the score?".`,
+Do not choose the file index. Use the conversation history to resolve short follow-ups like "and the score?".`,
       },
       {
         role: "user",
@@ -98,8 +151,10 @@ Use the conversation history to resolve short follow-ups like "what about hybrid
 
   return {
     route: result.route as Route,
-    trace: [`route=${result.route}`],
-    metrics,
+    documents: [],
+    relevant: false,
+    trace: [`peek=${peeked.length}`, "grade=no", `route=${result.route}`],
+    metrics: [...peekMetrics, ...graded.metrics, ...metrics],
   };
 }
 
@@ -110,6 +165,7 @@ export async function retrieveNode(state: GraphStateType) {
       4,
       state.originalQuestion,
       state.lockedFile || undefined,
+      state.userId || "",
     ),
   );
   return {
@@ -121,41 +177,11 @@ export async function retrieveNode(state: GraphStateType) {
 
 export async function gradeNode(state: GraphStateType) {
   const asked = state.originalQuestion || state.question;
-  const namedHit =
-    matchSources(
-      asked,
-      state.documents
-        .map((doc) => String(doc.metadata.source ?? ""))
-        .filter(Boolean),
-    ).length > 0;
-
-  if (namedHit) {
-    return {
-      relevant: true,
-      trace: ["grade=yes"],
-      metrics: [{ name: "grade", ms: 0 }],
-    };
-  }
-
-  const { result, metrics } = await timeHop("grade", async () => {
-    const llm = getChatModel().withStructuredOutput(gradeSchema);
-    return llm.invoke([
-      {
-        role: "system",
-        content:
-          "Decide if the retrieved chunks are useful for any document-related part of the user question. Missing live-web facts such as weather or news do not make file chunks irrelevant. If the chunks are off-topic or empty, relevant=false.",
-      },
-      {
-        role: "user",
-        content: `Question: ${asked}\n\nChunks:\n${formatDocs(state.documents)}`,
-      },
-    ]);
-  });
-
+  const graded = await gradeChunks(asked, state.documents);
   return {
-    relevant: result.relevant,
-    trace: [`grade=${result.relevant ? "yes" : "no"}`],
-    metrics,
+    relevant: graded.relevant,
+    trace: [`grade=${graded.relevant ? "yes" : "no"}`],
+    metrics: graded.metrics,
   };
 }
 
@@ -304,7 +330,7 @@ export async function generateNode(state: GraphStateType) {
     ? "Answer using ONLY the file chunks. If they do not contain the answer, say it is not in the indexed documents. Do not use general knowledge or the web. When you can, quote a short line from the file. Keep the answer short."
     : webOnly
       ? "Answer using only the web snippets. Do not claim you read the user's files. Mention URLs when they appear. Keep the answer short."
-      : "Answer using the provided context. Use file chunks for questions about uploaded documents and web snippets for live facts. You may combine both in one answer. If a named file is in the context, summarise it. Only say you do not know when that part is missing from the context. Cite source filenames or URLs. Keep the answer short.";
+      : "Answer using the provided context. Use file chunks for questions about uploaded documents and web snippets for live facts. You may combine both in one answer. If a named file is in the context, summarise it. Keep the file's own words for names, return values, and rules. Only say you do not know when that part is missing from the context. Cite source filenames or URLs. Keep the answer short.";
 
   let tokens: number | undefined;
   const { result, metrics } = await timeHop(
@@ -342,8 +368,17 @@ export async function generateNode(state: GraphStateType) {
 }
 
 export function afterRoute(state: GraphStateType) {
-  if ((state.answerMode || "auto") === "files") return "retrieve";
-  if ((state.answerMode || "auto") === "web") return "webSearch";
+  const mode: AnswerMode = state.answerMode || "auto";
+  const asked = state.originalQuestion || state.question;
+  if (mode === "files") return "retrieve";
+  if (mode === "web") return "webSearch";
+  if (
+    state.route === "index" &&
+    state.relevant &&
+    state.documents.length > 0
+  ) {
+    return needsLiveWeb(asked) ? "webSearch" : "generate";
+  }
   if (state.route === "search") return "webSearch";
   if (state.route === "general") return "generalLlm";
   return "retrieve";

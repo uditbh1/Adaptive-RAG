@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { unauthorized, userFromRequest } from "@/lib/auth/session";
 import {
   deleteIndexedFile,
   getVectorStore,
@@ -8,10 +9,12 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const user = await userFromRequest(request);
+  if (!user) return unauthorized();
   try {
     await getVectorStore();
-    return NextResponse.json({ files: await listIndexedFiles() });
+    return NextResponse.json({ files: await listIndexedFiles(user.id) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not list files.";
     return NextResponse.json({ error: message }, { status: 503 });
@@ -19,6 +22,8 @@ export async function GET() {
 }
 
 export async function DELETE(request: Request) {
+  const user = await userFromRequest(request);
+  if (!user) return unauthorized();
   const body = (await request.json()) as { filename?: string };
   const filename = body.filename?.trim();
   if (!filename) {
@@ -26,7 +31,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const files = await listIndexedFiles();
+    const files = await listIndexedFiles(user.id);
     const target = files.find(
       (file) => file.filename.toLowerCase() === filename.toLowerCase(),
     );
@@ -39,11 +44,11 @@ export async function DELETE(request: Request) {
         { status: 400 },
       );
     }
-    const result = await deleteIndexedFile(filename);
+    const result = await deleteIndexedFile(filename, user.id);
     return NextResponse.json({
       ok: true,
       filename: result.filename,
-      files: await listIndexedFiles(),
+      files: await listIndexedFiles(user.id),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Delete failed.";

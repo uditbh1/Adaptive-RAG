@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
-import { listConversations, parseSessionIds } from "@/lib/memory/sessions";
+import { unauthorized, userFromRequest } from "@/lib/auth/session";
+import { listConversations } from "@/lib/memory/sessions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
+  const user = await userFromRequest(request);
+  if (!user) return unauthorized();
   try {
-    const body = (await request.json()) as { sessionIds?: unknown };
-    const sessionIds = parseSessionIds(body?.sessionIds);
-    const sessions = await listConversations(sessionIds);
+    const sessions = await listConversations(user.id);
     return NextResponse.json({ sessions });
   } catch (error) {
-    if (error instanceof SyntaxError) {
-      return NextResponse.json({ error: "Expected JSON with sessionIds." }, { status: 400 });
-    }
     const message = error instanceof Error ? error.message : "Could not load history.";
     return NextResponse.json({ error: message }, { status: 503 });
   }

@@ -67,6 +67,14 @@ export const GraphState = Annotation.Root({
     reducer: (_current, update) => update,
     default: () => "",
   }),
+  userId: Annotation<string>({
+    reducer: (_current, update) => update,
+    default: () => "",
+  }),
+  sessionId: Annotation<string>({
+    reducer: (_current, update) => update,
+    default: () => "",
+  }),
   provenance: Annotation<Provenance>({
     reducer: (_current, update) => update,
     default: () => ({
