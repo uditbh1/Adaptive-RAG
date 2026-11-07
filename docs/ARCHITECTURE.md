@@ -2,7 +2,7 @@
 
 ## Overview
 
-One Next.js App Router project. The browser talks to Node API routes. Those routes call a compiled LangGraph.js `StateGraph`. Retrieval uses **Qdrant** (vector + keyword). Chat uses **MongoDB**. Classification picks one of three pipelines: **index**, **general**, **search**. Send-time **answer modes** (Auto / My files / Web only) can skip the classifier. Locked retrieve uses one filename.
+One Next.js App Router project. The browser talks to Node API routes. Those routes call a compiled LangGraph.js `StateGraph`. Retrieval uses **Qdrant** (vector + keyword). Chat uses **MongoDB**, scoped to a signed-in account. On Auto, classify peeks at that account’s files before choosing **index**, **search**, or **general**. **My files** and **Web only** skip the peek. Locked retrieve uses one filename.
 
 ```
 Browser (src/app/page.tsx)
@@ -111,13 +111,15 @@ src/lib/graph/index.ts      compile + runAdaptiveRag
 src/lib/graph/observe.ts    hop timing
 src/lib/graph/provenance.ts files vs web vs model banner
 src/lib/eval/groundedness.ts  claim vs chunk check
-src/lib/rag/store.ts        Qdrant chunk / hybrid retrieve
+src/lib/auth/                signup, login, httpOnly cookie
+src/lib/rag/store.ts        Qdrant chunk / hybrid retrieve / peek
 src/lib/db/mongo.ts         Mongo client
 src/lib/memory/sessions.ts  session + message CRUD
 src/lib/llm.ts              OpenAI or Azure OpenAI clients
 src/app/api/query/route.ts
 src/app/api/upload/route.ts
 src/app/api/sources/route.ts
-src/app/page.tsx            chat, modes, file lock, provenance
+src/app/api/auth/           signup, login, logout, me
+src/app/page.tsx            chat, sign-in, modes, file lock, provenance
 docker-compose.yml          local MongoDB + Qdrant
 ```

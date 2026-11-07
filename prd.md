@@ -29,8 +29,8 @@ Neither shows control. This app picks a path per question, checks retrieved text
 ## 3. Product goals
 
 1. Route each question to **index**, **search**, or **general** (Auto), or honour **My files** / **Web only**.
-2. Use documents only when chunks pass a relevance grade.
-3. Bound cost: **one rewrite**, then web search (Auto only). My files never falls back to the web.
+2. On Auto, use this account’s files when a peek shows the chunks state the fact. My files still grades retrieved text.
+3. Bound cost: Auto peeks once and does not rewrite. My files may rewrite once and never calls the web.
 4. Make provenance, path, sources, and hop timing visible.
 5. Measure the router and index groundedness (`npm run eval`).
 6. Persist chat in MongoDB so refresh does not wipe the conversation.
@@ -52,7 +52,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 1. Sign up or sign in. The sample knowledge base is indexed into Qdrant on first use. This account’s chats load from MongoDB.
 2. Optional: upload a `.txt`; it is chunked and indexed in Qdrant for this account. The sidebar lists sample files plus this account’s uploads. Re-uploading the same name replaces that account’s copy.
 3. Optional: pick Auto, My files, or Web only. Click a sidebar file to lock answers to that file.
-4. Ask a question. Auto classification still picks **Index**, **General**, or **Search**. Forced modes skip the classifier.
+4. Ask a question. On Auto, the app peeks at this account’s files and the sample corpus. Useful chunks take the **Index** path. Otherwise it picks **Search** or **General**. My files and Web only skip that peek.
 5. See a provenance banner (files / web / mixed / model), a short file quote when the answer came from docs, plus path chips, sources, and hop timing.
 6. Refresh: bubbles come back. Indexed files stay in Qdrant.
 
@@ -60,11 +60,11 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 
 | User intent | Product path |
 | --- | --- |
-| Auto: question about uploaded or sample docs | `index` → hybrid retrieve (named file first) → grade → (rewrite once if needed) → generate or web fallback |
-| Auto: file question plus a live fact | `index` → retrieve named file → keep those chunks → web search → generate |
-| Auto: live / current-world fact | `search` → Tavily → generate |
-| Auto: greeting, small talk, simple math | `general` → model only |
-| My files (optional lock to one file) | always `index`; retrieve that file or all files; never Tavily; refuse if chunks cannot answer |
+| Auto: question answered by this account’s files or the samples | peek → grade yes → `index` context → generate |
+| Auto: those chunks answer, and the question also needs a live fact | peek → keep those chunks → web search → generate |
+| Auto: files do not state the fact, and it needs the live web | peek → grade no → `search` → Tavily → generate |
+| Auto: greeting, small talk, simple math | peek → grade no → `general` → model only |
+| My files (optional lock to one file) | always `index`; retrieve that file or all files; one rewrite if weak; never Tavily |
 | Web only | always `search` → Tavily → generate |
 
 ### Failure behavior
@@ -83,7 +83,7 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | --- | --- | --- |
 | Query router | Structured `index \| search \| general` | Eval cases hit expected route |
 | Document index | `.txt` upload, ~1000 / 150 chunking, Qdrant | Upload then ask a fact from that file |
-| File list / delete | Sidebar shows sample files plus this browser’s uploads; uploads can be removed | Delete drops that owner’s Qdrant points (and the disk copy if present) |
+| File list / delete | Sidebar shows sample files plus this account’s uploads; uploads can be removed | Delete drops that account’s Qdrant points (and the disk copy if present) |
 | Hybrid retrieve | Vector + keyword, RRF fuse | Filenames and rare tokens still match |
 | Relevance grade | Independent of search tools | Trace shows `grade=yes` or `grade=no` |
 | Rewrite budget | At most one rewrite | Trace never shows two `rewrite` hops |
@@ -97,13 +97,13 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | Path UI | Pipeline badge + `trace` chips | The graph is visible without logs |
 | Accounts | Email and password. Session cookie. Chats and uploads stored by `userId` | Another account cannot list or retrieve them |
 | Sessions | MongoDB messages for the signed-in user. The open chat id may stay in `localStorage` | Sidebar and refresh show this account’s chats |
-| Eval | 10 router cases + index groundedness | `npm run eval` prints both scores |
+| Eval | 60 router cases, phrase checks, and index groundedness | `npm run eval` prints all three scores |
 
 ## 7. Success metrics
 
 | Metric | v1 bar |
 | --- | --- |
-| Router accuracy | Report N/10 from `npm run eval` |
+| Router accuracy | Report N/60 from `npm run eval` |
 | Index groundedness | Report supported / total claims on index cases |
 | Trace completeness | Every answer shows the hops that ran |
 | Bounded loops | `rewriteCount` never exceeds 1 |
@@ -134,6 +134,8 @@ v1 is Adaptive RAG with three pipelines, Qdrant retrieval, and MongoDB sessions.
 | Optional Azure OpenAI client | Done |
 | CI (`tsc` + lint) | Done |
 | Answer modes, file lock, provenance banner | Done |
+| Accounts scope chats and uploads | Done |
+| Auto peeks at this account’s files before web or model | Done |
 | PDF ingest | Out of scope until this PRD changes |
 
 ---

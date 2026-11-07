@@ -37,22 +37,31 @@ Index cases use facts in [`data/sample/`](../data/sample/). If those files chang
 
 ## How to read a trace
 
+Auto, files were useful:
+
 ```
-route=index -> retrieve=4 -> grade=yes -> generate
+peek=4 -> grade=yes -> route=index -> generate
 ```
 
-A miss that used the rewrite budget:
+Auto, files were useful and the question also needs a live fact:
+
+```
+peek=4 -> grade=yes -> route=index -> webSearch=4 -> generate
+```
+
+Auto, files were not useful:
+
+```
+peek=4 -> grade=no -> route=search -> webSearch=4 -> generate
+peek=4 -> grade=no -> route=general -> general
+```
+
+My files can still rewrite once. Eval does not use that mode:
 
 ```
 route=index -> retrieve=4 -> grade=no -> rewrite -> retrieve=4 -> grade=yes -> generate
 ```
 
-Fallback after the budget is spent:
-
-```
-route=index -> retrieve=4 -> grade=no -> rewrite -> retrieve=3 -> grade=no -> webSearch=4 -> generate
-```
-
 ## How I use the scores
 
-I report three numbers from [eval/RESULTS.md](../eval/RESULTS.md). Last local run: router **60/60**, phrases **38/38**, groundedness **87/97**. If a case fails, I read the path before changing the router prompt.
+I report three numbers from [eval/RESULTS.md](../eval/RESULTS.md). Last local run: router **60/60**, phrases **38/38**, groundedness **76/84**. Eval passes with no user id, so the peek sees sample files only. If a case fails, I read the path before changing the router.

@@ -1,28 +1,27 @@
 # Adaptive RAG
 
-Next.js app that routes each question through a LangGraph.js graph: indexed documents, live web search, or the model alone. You can force **My files** or **Web only**, or lock answers to one indexed file. Every reply shows whether it came from your files, the web, both, or the model. Weak document hits get one rewrite, then web search (Auto only).
+Next.js app that routes each question through a LangGraph.js graph: indexed documents, live web search, or the model alone. Sign in first. Chats and uploads belong to that account. On Auto, the graph peeks at this account’s files and the sample corpus; if those chunks state the fact, it answers from them, otherwise it chooses the web or the model. You can force **My files** or **Web only**, or lock answers to one indexed file. Every reply shows whether it came from your files, the web, both, or the model. My files may rewrite a weak hit once and still does not call the web.
 
 ## Graph
 
 ```mermaid
 flowchart TD
   Q[question] --> C[classify]
-  C -->|index| R[retrieve hybrid]
-  C -->|search| W[web search]
-  C -->|general| G[model only]
+  C -->|Auto peek useful| GEN[generate]
+  C -->|Auto peek useful + live fact| W[web search]
+  C -->|Auto peek miss, live fact| W
+  C -->|Auto peek miss, model| G[model only]
+  C -->|My files| R[retrieve hybrid]
+  C -->|Web only| W
   R --> GR[grade]
-  GR -->|yes + live fact| W
-  GR -->|yes| GEN[generate]
+  GR -->|yes| GEN
   GR -->|no + rewrite left| RW[rewrite]
   RW --> R
-  GR -->|no + budget spent| W
+  GR -->|My files, still weak| GEN
   W --> GEN
-  C -->|files mode| R
-  C -->|web mode| W
-  GR -->|files mode, still weak| GEN
 ```
 
-Rewrite budget is one. That stops an infinite retrieve loop.
+On Auto, classify embeds the question and hybrid-searches sample files plus this account’s chunks, then grades them. A useful peek is the answer context. A miss does not open the index again. My files still retrieves, grades, and may rewrite once.
 
 Retrieve is hybrid: Qdrant vector search plus keyword search, fused with reciprocal rank fusion. If the question names a `.txt` file, those chunks are used first. Clicking a file in the sidebar retrieves that source only.
 
@@ -30,13 +29,13 @@ Retrieve is hybrid: Qdrant vector search plus keyword search, fused with recipro
 
 ## Metrics
 
-Latest local run ([eval/RESULTS.md](eval/RESULTS.md), 2026-09-07):
+Latest local run ([eval/RESULTS.md](eval/RESULTS.md), 2026-11-07):
 
 | Metric                          | Score     |
 | ------------------------------- | --------- |
 | Router accuracy                 | **60/60** |
 | Phrase checks (index facts)     | **38/38** |
-| Groundedness (claims in chunks) | **87/97** |
+| Groundedness (claims in chunks) | **76/84** |
 
 `npm run eval` refreshes those files.
 
@@ -81,7 +80,7 @@ These files are seeded into Qdrant on first use (and any missing sample is added
 | [data/sample/tavily-search.txt](data/sample/tavily-search.txt)                   | Tavily, 4 results, `keptDocs`                                        |
 | [data/sample/eval-and-grade.txt](data/sample/eval-and-grade.txt)                 | Grade is read-only, rewrite budget is one                            |
 | [data/sample/models-and-chunking.txt](data/sample/models-and-chunking.txt)       | `gpt-4o-mini`, 1000 / 150 chunks                                     |
-| [data/sample/product-scope.txt](data/sample/product-scope.txt)                   | No login, three routes, APIs, CI                                     |
+| [data/sample/product-scope.txt](data/sample/product-scope.txt)                   | Three routes, APIs, CI. The file still says “no login” for the eval. |
 
 ## Setup
 
@@ -99,7 +98,9 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Sample files under `data/sample/` are indexed automatically.
+Open [http://localhost:3000](http://localhost:3000) and sign up. Sample files under `data/sample/` are indexed automatically and are visible to every account. Uploads are visible only to the account that added them.
+
+Why Auto peeks at files, and why a heading catalog was not used, is [D-027](decision.md). Why chats and uploads use an account id is [D-026](decision.md).
 
 Try:
 
